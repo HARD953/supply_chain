@@ -1,12 +1,20 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
+import SurfaceCollectScreen from './src/collecte';
+import OrderManagementMobile from './src/Order';
+import LoginScreen from './src/LoginPage';
+import OrderRecapPage from './src/OrderRecapPage';
+import DistributorManagementMobile from './src/DistributorManagementMobile';
+//import LoginScreen from './src/LoginBoutique';
+import SupplierProductsScreen from './src/ListeProduit';
+import PreOrderManagement from './src/PreOrderCommande';
+import SurfaceRecapScreen from './src/RecapCollecte';
+import Navigue from './src/Navigate';
 
+import Navigators from './src/Navigator';
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <Navigators />
   );
 }
 
