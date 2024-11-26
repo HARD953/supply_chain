@@ -10,6 +10,8 @@ import SupplierProductsScreen from './src/ListeProduit';
 import PreOrderManagement from './src/PreOrderCommande';
 import SurfaceRecapScreen from './src/RecapCollecte';
 import Navigue from './src/Navigate';
+//import ProductDetailsScreen from './src/DetailProduitScreen';
+import ProductDetailsScreen from './src/ProductDetail';
 
 import Navigators from './src/Navigator';
 export default function App() {

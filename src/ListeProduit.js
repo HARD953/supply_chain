@@ -25,7 +25,7 @@ const SupplierProductsScreen = ({navigation}) => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [isCartModalVisible, setIsCartModalVisible] = useState(false);
-
+  const [user, setUser] = useState(null); // Add user state at the top of the component
   const categories = [
     { 
       id: '0', 
@@ -357,23 +357,42 @@ const SupplierProductsScreen = ({navigation}) => {
     </View>
   );
 
+  // const renderHeader = () => (
+  //   <View style={styles.header}>
+  //     <Text style={styles.headerTitle}>Produits Distributeurs</Text>
+  //     <View style={styles.headerActions}>
+  //       <TouchableOpacity 
+  //         style={styles.iconButton}
+  //         onPress={() => setFilterMenuVisible(true)}
+  //       >
+  //         <MaterialCommunityIcons name="filter-variant" size={24} color="#333" />
+  //       </TouchableOpacity>
+  //       <TouchableOpacity 
+  //         style={styles.iconButton}
+  //         onPress={() => setSortMenuVisible(true)}
+  //       >
+  //         <MaterialCommunityIcons name="sort" size={24} color="#333" />
+  //       </TouchableOpacity>
+  //     </View>
+  //   </View>
+  // );
+
   const renderHeader = () => (
     <View style={styles.header}>
-      <Text style={styles.headerTitle}>Produits Distributeurs</Text>
-      <View style={styles.headerActions}>
-        <TouchableOpacity 
-          style={styles.iconButton}
-          onPress={() => setFilterMenuVisible(true)}
-        >
-          <MaterialCommunityIcons name="filter-variant" size={24} color="#333" />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.iconButton}
-          onPress={() => setSortMenuVisible(true)}
-        >
-          <MaterialCommunityIcons name="sort" size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
+      <Text style={styles.headerTitle}>Distributeurs</Text>
+      <TouchableOpacity 
+        style={styles.userStatusContainer}
+        onPress={() => navigation.navigate('LoginScreen')}
+      >
+        <MaterialCommunityIcons 
+          name={user ? "account-circle" : "login"} 
+          size={24} 
+          color="#333" 
+        />
+        <Text style={styles.userStatusText}>
+          {user ? user.name : ""}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -418,10 +437,14 @@ const SupplierProductsScreen = ({navigation}) => {
     return (
       <TouchableOpacity 
         style={styles.productCard} 
-        onPress={() => addToCart(item)}
+        //onPress={() => addToCart(item)}
+        onPress={() => navigation.navigate('ProductDetailsScreen', {
+          product: item, 
+          categories: categories
+        })}
       >
         <Image
-          source={require('../assets/brouette.jpg')}
+          source={require('../assets/ciment.jpeg')}
           style={styles.productImage}
         />
         <View style={styles.productInfo}>
@@ -572,14 +595,17 @@ const SupplierProductsScreen = ({navigation}) => {
         <Divider />
         <Menu.Item onPress={() => {}} title="Réinitialiser les filtres" />
       </Menu>
-
+      
       <FAB
+      
       style={styles.fab}
       icon="cart"
       onPress={() => setIsCartModalVisible(true)}
       label={`Panier (${cart.length})`}
       labelStyle={{ color: '#fff' }}  // Ajout de cette ligne
-    />
+    >
+
+    </FAB>
     </SafeAreaView>
   );
 };
@@ -629,7 +655,7 @@ const styles = StyleSheet.create({
           shadowRadius: 2,
         },
         headerTitle: {
-          fontSize: 20,
+          fontSize: 15,
           fontWeight: 'bold',
           color: '#333',
         },
@@ -890,6 +916,16 @@ const styles = StyleSheet.create({
   },
   closeCartButton: {
     marginTop: 10,
+  },
+  userStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+  },
+  userStatusText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: '#333',
   },
 });
 

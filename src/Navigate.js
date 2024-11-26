@@ -8,6 +8,7 @@ import LoginScreen from './LoginBoutique';
 import OrderRecapPage from './OrderRecapPage';
 import PreOrderManagement from './PreOrderCommande';
 import SupplierSignUpScreen from './SupplierSignUpScreen';
+import ProductDetailsScreen from './ProductDetail';
 // import YourComponent1 from './Pages/Coordonne';
   
 const Stack = createStackNavigator();
@@ -24,6 +25,7 @@ export default function Navigue({ navigation }) {
         <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="SupplierSignUpScreen" component={SupplierSignUpScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="SupplierProductsScreen" component={SupplierProductsScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="ProductDetailsScreen" component={ProductDetailsScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="PreOrderManagement" component={PreOrderManagement} options={{ headerShown: true }}/>
       </Stack.Navigator> 
   );
