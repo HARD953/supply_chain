@@ -437,14 +437,14 @@ const SupplierProductsScreen = ({navigation}) => {
     return (
       <TouchableOpacity 
         style={styles.productCard} 
-        //onPress={() => addToCart(item)}
-        onPress={() => navigation.navigate('ProductDetailsScreen', {
-          product: item, 
-          categories: categories
-        })}
+        onPress={() => addToCart(item)}
+        // onPress={() => navigation.navigate('ProductDetailsScreen', {
+        //   product: item, 
+        //   categories: categories
+        // })}
       >
         <Image
-          source={require('../assets/ciment.jpeg')}
+          source={require('../assets/iphone.jpg')}
           style={styles.productImage}
         />
         <View style={styles.productInfo}>
@@ -491,60 +491,109 @@ const SupplierProductsScreen = ({navigation}) => {
       visible={isCartModalVisible}
       onRequestClose={() => setIsCartModalVisible(false)}
     >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Votre Panier</Text>
-          <FlatList
-            data={cart}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.cartItemContainer}>
-                <Text style={styles.cartItemName}>{item.name}</Text>
-                <View style={styles.cartItemQuantityContainer}>
-                  <TouchableOpacity onPress={() => updateCartQuantity(item.id, item.quantity - 1)}>
-                    <MaterialCommunityIcons name="minus" size={24} color="#333" />
-                  </TouchableOpacity>
-                  <Text style={styles.cartItemQuantity}>{item.quantity}</Text>
-                  <TouchableOpacity onPress={() => updateCartQuantity(item.id, item.quantity + 1)}>
-                    <MaterialCommunityIcons name="plus" size={24} color="#333" />
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.cartItemPrice}>{(item.price * item.quantity).toFixed(2)} FCFA</Text>
-                <TouchableOpacity onPress={() => removeFromCart(item.id)}>
-                  <MaterialCommunityIcons name="delete" size={24} color="#FF4444" />
-                </TouchableOpacity>
-              </View>
-            )}
-          />
-          <View style={styles.cartTotalContainer}>
-            <Text style={styles.cartTotalText}>Total: {getTotalCartAmount().toFixed(2)} FCFA</Text>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Mon Panier</Text>
+            <TouchableOpacity 
+              style={styles.closeModalButton}
+              onPress={() => setIsCartModalVisible(false)}
+            >
+              <MaterialCommunityIcons name="close" size={24} color="#333" />
+            </TouchableOpacity>
           </View>
-          <Button 
-            mode="contained" 
-            style={styles.validateCartButton}
-            onPress={() => {
-              // Logique de validation de commande
-              console.log('Commande validée:', cart);
-              setCart([]);
-              setIsCartModalVisible(false);
-              navigation.navigate('PreOrderManagement')
-              // Add additional logic for order processing if needed
-            }}
-    
-          >
-            Valider la commande
-          </Button>
-          <Button 
-            mode="outlined" 
-            style={styles.closeCartButton}
-            onPress={() => setIsCartModalVisible(false)}
-          >
-            Fermer
-          </Button>
+  
+          {cart.length === 0 ? (
+            <View style={styles.emptyCartContainer}>
+              <MaterialCommunityIcons name="cart-off" size={64} color="#A9A9A9" />
+              <Text style={styles.emptyCartText}>Votre panier est vide</Text>
+            </View>
+          ) : (
+            <>
+              <FlatList
+                data={cart}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.cartItemsList}
+                renderItem={({ item }) => (
+                  <View style={styles.cartItemCard}>
+                    <Image 
+                      source={require('../assets/ciment.jpeg')} 
+                      style={styles.cartItemImage} 
+                    />
+                    <View style={styles.cartItemDetails}>
+                      <Text style={styles.cartItemName} numberOfLines={2}>
+                        {item.name}
+                      </Text>
+                      <Text style={styles.cartItemSupplier}>
+                        {item.supplier}
+                      </Text>
+                      <View style={styles.cartItemQuantityContainer}>
+                        <TouchableOpacity 
+                          onPress={() => updateCartQuantity(item.id, item.quantity - 1)}
+                          style={styles.quantityButton}
+                        >
+                          <MaterialCommunityIcons name="minus" size={20} color="#333" />
+                        </TouchableOpacity>
+                        <Text style={styles.cartItemQuantity}>
+                          {item.quantity}
+                        </Text>
+                        <TouchableOpacity 
+                          onPress={() => updateCartQuantity(item.id, item.quantity + 1)}
+                          style={styles.quantityButton}
+                        >
+                          <MaterialCommunityIcons name="plus" size={20} color="#333" />
+                        </TouchableOpacity>
+                        <Text style={styles.cartItemPrice}>
+                          {(item.price * item.quantity).toFixed(2)} FCFA
+                        </Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity 
+                      onPress={() => removeFromCart(item.id)}
+                      style={styles.deleteItemButton}
+                    >
+                      <MaterialCommunityIcons name="trash-can" size={24} color="#FF4444" />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              />
+  
+              <View style={styles.cartSummary}>
+                <View style={styles.cartSummaryRow}>
+                  <Text style={styles.cartSummaryLabel}>Nombre d'articles</Text>
+                  <Text style={styles.cartSummaryValue}>
+                    {cart.reduce((total, item) => total + item.quantity, 0)}
+                  </Text>
+                </View>
+                <View style={styles.cartSummaryRow}>
+                  <Text style={styles.cartSummaryLabel}>Total</Text>
+                  <Text style={styles.cartSummaryTotal}>
+                    {getTotalCartAmount().toFixed(2)} FCFA
+                  </Text>
+                </View>
+              </View>
+  
+              <Button 
+                mode="contained" 
+                style={styles.validateOrderButton}
+                onPress={() => {
+                  if (cart.length === 0) {
+                    Alert.alert('Panier vide', 'Veuillez ajouter des articles à votre panier.');
+                    return;
+                  }
+                  setIsCartModalVisible(false);
+                  navigation.navigate('PreOrderManagement', { cart });
+                }}
+              >
+                Valider la commande
+              </Button>
+            </>
+          )}
         </View>
       </View>
     </Modal>
   );
+  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -838,7 +887,8 @@ const styles = StyleSheet.create({
           margin: 16,
           right: 0,
           bottom: 0,
-          backgroundColor: '#1E4D92',
+          backgroundColor: '#fff',
+          borderWidth:2
         },
         emptyContainer: {
           flex: 1,
@@ -851,72 +901,130 @@ const styles = StyleSheet.create({
           color: '#666',
           marginTop: 8,
         },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    width: '90%',
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
-    maxHeight: '80%',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  cartItemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  cartItemName: {
-    flex: 2,
-    fontSize: 16,
-  },
-  cartItemQuantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 10,
-  },
-  cartItemQuantity: {
-    marginHorizontal: 10,
-    fontSize: 16,
-  },
-  cartItemPrice: {
-    flex: 1,
-    textAlign: 'right',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  cartTotalContainer: {
-    marginTop: 15,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-  },
-  cartTotalText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  validateCartButton: {
-    marginTop: 15,
-    backgroundColor: '#4A90E2',
-    
-  },
-  closeCartButton: {
-    marginTop: 10,
-  },
+        modalOverlay: {
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          justifyContent: 'flex-end',
+        },
+        modalContainer: {
+          backgroundColor: '#F5F5F5',
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          paddingTop: 20,
+          maxHeight: '90%',
+        },
+        modalHeader: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingHorizontal: 20,
+          marginBottom: 15,
+        },
+        modalTitle: {
+          fontSize: 20,
+          fontWeight: 'bold',
+          color: '#333',
+        },
+        closeModalButton: {
+          padding: 10,
+        },
+        emptyCartContainer: {
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 40,
+        },
+        emptyCartText: {
+          fontSize: 18,
+          color: '#A9A9A9',
+          marginTop: 15,
+        },
+        cartItemsList: {
+          paddingHorizontal: 20,
+        },
+        cartItemCard: {
+          flexDirection: 'row',
+          backgroundColor: '#FFFFFF',
+          borderRadius: 10,
+          marginBottom: 15,
+          padding: 15,
+          alignItems: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3,
+        },
+        cartItemImage: {
+          width: 60,
+          height: 60,
+          borderRadius: 10,
+          marginRight: 15,
+        },
+        cartItemDetails: {
+          flex: 1,
+        },
+        cartItemName: {
+          fontSize: 16,
+          fontWeight: '600',
+          color: '#333',
+          marginBottom: 5,
+        },
+        cartItemSupplier: {
+          fontSize: 12,
+          color: '#666',
+          marginBottom: 5,
+        },
+        cartItemQuantityContainer: {
+          flexDirection: 'row',
+          alignItems: 'center',
+        },
+        quantityButton: {
+          padding: 5,
+          backgroundColor: '#F0F0F0',
+          borderRadius: 5,
+        },
+        cartItemQuantity: {
+          marginHorizontal: 10,
+          fontSize: 16,
+          fontWeight: '500',
+        },
+        cartItemPrice: {
+          marginLeft: 'auto',
+          fontSize: 14,
+          fontWeight: 'bold',
+          color: '#1E4D92',
+        },
+        deleteItemButton: {
+          padding: 10,
+        },
+        cartSummary: {
+          backgroundColor: '#FFFFFF',
+          borderRadius: 10,
+          margin: 20,
+          padding: 15,
+        },
+        cartSummaryRow: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+        },
+        cartSummaryLabel: {
+          fontSize: 16,
+          color: '#666',
+        },
+        cartSummaryValue: {
+          fontSize: 16,
+          fontWeight: '500',
+        },
+        cartSummaryTotal: {
+          fontSize: 18,
+          fontWeight: 'bold',
+          color: '#1E4D92',
+        },
+        validateOrderButton: {
+          margin: 20,
+          backgroundColor: '#1E4D92',
+        },  
   userStatusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
