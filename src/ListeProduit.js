@@ -378,21 +378,25 @@ const SupplierProductsScreen = ({navigation}) => {
   // );
 
   const renderHeader = () => (
-    <View style={styles.header}>
-      <Text style={styles.headerTitle}>Distributeurs</Text>
-      <TouchableOpacity 
-        style={styles.userStatusContainer}
-        onPress={() => navigation.navigate('LoginScreen')}
-      >
-        <MaterialCommunityIcons 
-          name={user ? "account-circle" : "login"} 
-          size={24} 
-          color="#333" 
-        />
-        <Text style={styles.userStatusText}>
-          {user ? user.name : ""}
-        </Text>
-      </TouchableOpacity>
+    <View style={styles.headerContainer}>
+      <View style={styles.headerLeftSection}>
+        <Text style={styles.headerTitle}>Distributeurs</Text>
+      </View>
+      <View style={styles.headerRightSection}>
+        <TouchableOpacity 
+          style={styles.cartIconContainer} 
+          onPress={() => setIsCartModalVisible(true)}
+        >
+          <View style={styles.cartBadgeContainer}>
+            <Text style={styles.cartBadgeText}>{cart.length}</Text>
+          </View>
+          <MaterialCommunityIcons 
+            name="cart" 
+            size={24} 
+            color={cart.length > 0 ? "white" : "#A9A9A9"} 
+          />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -438,13 +442,9 @@ const SupplierProductsScreen = ({navigation}) => {
       <TouchableOpacity 
         style={styles.productCard} 
         onPress={() => addToCart(item)}
-        // onPress={() => navigation.navigate('ProductDetailsScreen', {
-        //   product: item, 
-        //   categories: categories
-        // })}
       >
         <Image
-          source={require('../assets/iphone.jpg')}
+          source={require('../assets/chocolat.jpeg')}
           style={styles.productImage}
         />
         <View style={styles.productInfo}>
@@ -477,9 +477,17 @@ const SupplierProductsScreen = ({navigation}) => {
             </Badge>
           </View>
         </View>
-        <TouchableOpacity style={styles.moreButton}>
-          <MaterialCommunityIcons name="dots-vertical" size={24} color="#666" />
-        </TouchableOpacity>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.moreButton}>
+            <MaterialCommunityIcons name="dots-vertical" size={24} color="#666" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.addButton} 
+            onPress={() => addToCart(item)}
+          >
+            <MaterialCommunityIcons name="plus" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -645,16 +653,7 @@ const SupplierProductsScreen = ({navigation}) => {
         <Menu.Item onPress={() => {}} title="Réinitialiser les filtres" />
       </Menu>
       
-      <FAB
-      
-      style={styles.fab}
-      icon="cart"
-      onPress={() => setIsCartModalVisible(true)}
-      label={`Panier (${cart.length})`}
-      labelStyle={{ color: '#fff' }}  // Ajout de cette ligne
-    >
 
-    </FAB>
     </SafeAreaView>
   );
 };
@@ -704,7 +703,7 @@ const styles = StyleSheet.create({
           shadowRadius: 2,
         },
         headerTitle: {
-          fontSize: 15,
+          fontSize: 18,
           fontWeight: 'bold',
           color: '#333',
         },
@@ -808,6 +807,55 @@ const styles = StyleSheet.create({
         //   fontSize: 12,
         //   fontWeight: '500',
         // },
+        headerContainer: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          paddingVertical: 10,
+          backgroundColor: '#fff',
+          elevation: 2,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 2,
+        },
+        headerLeftSection: {
+          flex: 1,
+        },
+        headerRightSection: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: '#1E4D92',
+          borderRadius:30,
+          width:'10%',
+          height:'150%',
+          justifyContent:'center'
+        },
+        headerTitle: {
+          fontSize: 18,
+          fontWeight: 'bold',
+          color: '#333',
+        },
+        cartFab: {
+          marginLeft: 10,
+          backgroundColor: '#fff',
+        },
+        cartFabLabel: {
+          color: '#fff',
+          fontWeight: 'bold',
+        },
+        userStatusContainer: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginRight: 15,
+        },
+        userStatusText: {
+          marginLeft: 8,
+          fontSize: 14,
+          color: '#333',
+        },
+        
         productList: {
           padding: 8,
         },
@@ -826,11 +874,10 @@ const styles = StyleSheet.create({
           shadowOpacity: 0.1,
           shadowRadius: 2,
           overflow: 'hidden',
-          
         },
         productImage: {
           width: '100%',
-          height: 120,
+          height: 150,
           borderTopLeftRadius: 12,
           borderTopRightRadius: 12,
           backgroundColor: '#fff',
@@ -884,10 +931,10 @@ const styles = StyleSheet.create({
         },
         fab: {
           position: 'absolute',
-          margin: 16,
+          margin: 10,
           right: 0,
           bottom: 0,
-          backgroundColor: '#fff',
+          // backgroundColor: '#18812d',
           borderWidth:2
         },
         emptyContainer: {
@@ -1034,6 +1081,44 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 16,
     color: '#333',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'absolute',
+    top: 10,
+    right: 10,
+  },
+  addButton: {
+    backgroundColor: '#1E4D92',
+    borderRadius: 20,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  cartIconContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  cartBadgeContainer: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#1E4D92',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  cartBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 
