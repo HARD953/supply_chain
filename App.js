@@ -17,7 +17,7 @@ import UVManagementScreen from './src/UVManagementScreen';
 import Navigators from './src/Navigator';
 export default function App() {
   return (
-    <UVManagementScreen />
+    <Navigators />
   );
 }
 

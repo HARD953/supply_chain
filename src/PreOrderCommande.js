@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,87 +8,117 @@ import {
   SafeAreaView,
   StatusBar,
   Modal,
+  Dimensions,
 } from 'react-native';
-import { TextInput } from 'react-native-paper';
+import { TextInput, Chip } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeIn, SlideInRight } from 'react-native-reanimated';
 
-const PRE_ORDERS = [
-  {
-    id: '1',
-    shopName: 'Boutique Abidjan Centre',
-    distributorName: 'Solibra A',
-    status: 'En cours',
-    totalAmount: 750000,
-    orderDate: '2024-02-15',
-    expectedDelivery: '2024-02-22',
-    items: [
-      { name: 'Eau minérale', quantity: 100, unitPrice: 500 },
-      { name: 'Soda', quantity: 50, unitPrice: 800 },
-    ]
-  },
-  {
-    id: '2',
-    shopName: 'Commerce Bouaké',
-    distributorName: 'Carré dOR B',
-    status: 'Livré',
-    totalAmount: 450000,
-    orderDate: '2024-02-10',
-    expectedDelivery: '2024-02-17',
-    items: [
-      { name: 'Pain', quantity: 200, unitPrice: 250 },
-      { name: 'Lait', quantity: 75, unitPrice: 1000 },
-    ]
-  },
-  {
-    id: '3',
-    shopName: 'Supérette Bassam',
-    distributorName: 'Celeste C',
-    status: 'Annulé',
-    totalAmount: 350000,
-    orderDate: '2024-02-12',
-    expectedDelivery: null,
-    items: [
-      { name: 'Savon', quantity: 50, unitPrice: 2000 },
-    ]
-  },
-  {
-    id: '4',
-    shopName: 'Supérette Bassam',
-    distributorName: 'Celeste C',
-    status: 'Annulé',
-    totalAmount: 350000,
-    orderDate: '2024-02-12',
-    expectedDelivery: null,
-    items: [
-      { name: 'Savon', quantity: 50, unitPrice: 2000 },
-    ]
-  },
-  {
-    id: '5',
-    shopName: 'Commerce Bouaké',
-    distributorName: 'Carré dOR B',
-    status: 'Livré',
-    totalAmount: 450000,
-    orderDate: '2024-02-10',
-    expectedDelivery: '2024-02-17',
-    items: [
-      { name: 'Pain', quantity: 200, unitPrice: 250 },
-      { name: 'Lait', quantity: 75, unitPrice: 1000 },
-    ]
-  },
-];
+const { width } = Dimensions.get('window');
 
-const statusColors = {
-  'En cours': '#FFA500',   // Orange
-  'Livré': '#2ECC71',      // Green
-  'Annulé': '#E74C3C',     // Red
+const STATUS_CONFIG = {
+  'En attente': {
+    color: '#FFA500',
+    gradient: ['#FFD700', '#FFA500'],
+    icon: 'clock-outline'
+  },
+  'En cours': {
+    color: '#1E90FF',
+    gradient: ['#4FC3F7', '#1E90FF'],
+    icon: 'progress-check'
+  },
+  'Livrée': {
+    color: '#2ECC71',
+    gradient: ['#81C784', '#2ECC71'],
+    icon: 'check-circle-outline'
+  },
+  'Annulée': {
+    color: '#E74C3C',
+    gradient: ['#EF5350', '#E74C3C'],
+    icon: 'close-circle-outline'
+  }
 };
 
-const PreOrderManagement = () => {
+const PreOrderManagement = ({ route, navigation }) => {
+  const { cart = [], totalAmount, totalItems, orderDate } = route.params || {};
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState(null);
-  const [preOrders, setPreOrders] = useState(PRE_ORDERS);
+  const [preOrders, setPreOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [isStatusModalVisible, setStatusModalVisible] = useState(false);
+  const [advancedFiltersVisible, setAdvancedFiltersVisible] = useState(false);
+
+  useEffect(() => {
+    console.log('Cart received:', cart);
+    console.log('Total Amount:', totalAmount);
+    console.log('Total Items:', totalItems);
+    console.log('Order Date:', orderDate);
+    if (cart && cart.length > 0) {
+      const newPreOrder = {
+        id: `PRE-${Date.now()}`,
+        shopName: 'Ma Boutique',
+        distributorName: 'Mon Distributeur',
+        status: 'En attente',
+        totalAmount: totalAmount || cart.reduce((total, item) => total + (item.price * item.quantity), 0),
+        orderDate: orderDate || new Date().toISOString().split('T')[0],
+        expectedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        items: cart.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          unitPrice: item.price
+        }))
+      };
+
+      setPreOrders(prevOrders => [newPreOrder, ...prevOrders]);
+    }
+  }, [cart]);
+
+  const updateOrderStatus = (orderId, newStatus) => {
+    setPreOrders(prevOrders => 
+      prevOrders.map(order => 
+        order.id === orderId ? { ...order, status: newStatus } : order
+      )
+    );
+    setStatusModalVisible(false);
+    setSelectedOrder(null);
+  };
+
+  const StatusChangeModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={isStatusModalVisible}
+      onRequestClose={() => setStatusModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Changer le statut de la commande</Text>
+          {Object.keys(STATUS_CONFIG).map(status => (
+            <TouchableOpacity
+              key={status}
+              style={styles.statusOption}
+              onPress={() => updateOrderStatus(selectedOrder.id, status)}
+            >
+              <View 
+                style={[
+                  styles.statusDot, 
+                  { backgroundColor: STATUS_CONFIG[status].color }
+                ]} 
+              />
+              <Text style={styles.statusOptionText}>{status}</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity 
+            style={styles.cancelButton}
+            onPress={() => setStatusModalVisible(false)}
+          >
+            <Text style={styles.cancelButtonText}>Annuler</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 
   const filteredPreOrders = useMemo(() => {
     return preOrders.filter(order => 
@@ -100,154 +130,201 @@ const PreOrderManagement = () => {
     );
   }, [searchQuery, statusFilter, preOrders]);
 
-  const handleStatusChange = (newStatus) => {
-    if (selectedOrder) {
-      const updatedOrders = preOrders.map(order => {
-        if (order.id === selectedOrder.id) {
-          return {
-            ...order,
-            status: newStatus,
-            expectedDelivery: newStatus === 'Annulé' ? null : order.expectedDelivery
-          };
-        }
-        return order;
-      });
-      setPreOrders(updatedOrders);
-      setModalVisible(false);
-      setSelectedOrder(null);
-    }
-  };
-
-  const StatusUpdateModal = () => (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={modalVisible}
-      onRequestClose={() => setModalVisible(false)}
+  const renderPreOrderItem = ({ item, index }) => (
+    <Animated.View 
+      entering={SlideInRight.delay(index * 100)}
+      style={styles.preOrderCard}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Modifier le statut</Text>
-          {selectedOrder && (
-            <Text style={styles.modalSubtitle}>
-              {selectedOrder.shopName} - Commande #{selectedOrder.id}
-            </Text>
-          )}
-          
-          {Object.keys(statusColors).map((status) => (
-            <TouchableOpacity
-              key={status}
-              style={[
-                styles.statusOption,
-                { borderLeftColor: statusColors[status], borderLeftWidth: 4 }
-              ]}
-              onPress={() => handleStatusChange(status)}
-            >
-              <Text style={styles.statusOptionText}>{status}</Text>
-            </TouchableOpacity>
-          ))}
-          
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => setModalVisible(false)}
+      <LinearGradient
+        colors={STATUS_CONFIG[item.status].gradient}
+        style={styles.cardHeader}
+      >
+        <View style={styles.cardHeaderContent}>
+          <MaterialCommunityIcons 
+            name={STATUS_CONFIG[item.status].icon} 
+            size={24} 
+            color="white" 
+          />
+          <Text style={styles.shopName}>{item.shopName}</Text>
+          <TouchableOpacity 
+            onPress={() => {
+              setSelectedOrder(item);
+              setStatusModalVisible(true);
+            }}
           >
-            <Text style={styles.cancelButtonText}>Fermer</Text>
+            <Text style={styles.statusText}>{item.status}</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </Modal>
-  );
+      </LinearGradient>
 
-  const renderPreOrderItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.preOrderCard}
-      onPress={() => {
-        setSelectedOrder(item);
-        setModalVisible(true);
-      }}
-    >
-      <View style={styles.preOrderHeader}>
-        <Text style={styles.shopName}>{item.shopName}</Text>
-        <View 
-          style={[
-            styles.statusBadge, 
-            { backgroundColor: statusColors[item.status] }
-          ]}
-        >
-          <Text style={styles.statusText}>{item.status}</Text>
-        </View>
-      </View>
-      <Text style={styles.distributorName}>
-        Distributeur: {item.distributorName}
-      </Text>
-      <View style={styles.orderDetails}>
-        <Text>Date de commande: {item.orderDate}</Text>
-        {item.expectedDelivery && (
-          <Text>Livraison prévue: {item.expectedDelivery}</Text>
-        )}
-        <Text style={styles.totalAmount}>
-          Total: {item.totalAmount.toLocaleString()} FCFA
-        </Text>
-      </View>
-      <View style={styles.itemsContainer}>
-        {item.items.map((product, index) => (
-          <View key={index} style={styles.productItem}>
-            <Text>{product.name}</Text>
-            <Text>
-              {product.quantity} x {product.unitPrice.toLocaleString()} FCFA
+      <View style={styles.cardBody}>
+        <View style={styles.orderInfoRow}>
+          <View style={styles.orderInfoColumn}>
+            <Text style={styles.labelText}>Distributeur</Text>
+            <Text style={styles.valueText}>{item.distributorName}</Text>
+          </View>
+          <View style={styles.orderInfoColumn}>
+            <Text style={styles.labelText}>Total</Text>
+            <Text style={styles.amountText}>
+              {item.totalAmount.toLocaleString()} FCFA
             </Text>
           </View>
-        ))}
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.dateContainer}>
+          <View style={styles.dateColumn}>
+            <MaterialCommunityIcons name="calendar-today" size={16} color="#666" />
+            <Text style={styles.dateText}>
+              Commandée: {item.orderDate}
+            </Text>
+          </View>
+          <View style={styles.dateColumn}>
+            <MaterialCommunityIcons name="truck-delivery" size={16} color="#666" />
+            <Text style={styles.dateText}>
+              Livrée: {item.expectedDelivery}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.itemsSection}>
+          {item.items.map((product, prodIndex) => (
+            <View key={prodIndex} style={styles.productItem}>
+              <Text style={styles.productName}>{product.name}</Text>
+              <Text style={styles.productDetails}>
+                {product.quantity} x {product.unitPrice.toLocaleString()} FCFA
+              </Text>
+            </View>
+          ))}
+        </View>
       </View>
-    </TouchableOpacity>
+    </Animated.View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      <StatusUpdateModal />
-      <View style={styles.header}>
-        <Text style={styles.title}>Mes Précommandes</Text>
+      <StatusBar barStyle="light-content" backgroundColor="#007AFF" />
+      <View style={styles.topBar}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={24} color="white" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Mes Commandes</Text>
+        <TouchableOpacity 
+          style={styles.filterButton}
+          onPress={() => setAdvancedFiltersVisible(!advancedFiltersVisible)}
+        >
+          <MaterialCommunityIcons 
+            name={advancedFiltersVisible ? "filter-remove" : "filter-variant"} 
+            size={24} 
+            color="white" 
+          />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.filterContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Rechercher une commande..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          mode="outlined"
-          dense
-        />
-        <View style={styles.statusFilterContainer}>
-          {['En cours', 'Livré', 'Annulé'].map(status => (
-            <TouchableOpacity
+      <View style={styles.searchContainer}>
+        <View style={styles.searchRow}>
+          <TextInput
+            mode="outlined"
+            placeholder="Rechercher une commande..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            left={
+              <TextInput.Icon 
+                name="magnify" 
+                color={searchQuery ? '#007AFF' : '#999'} 
+              />
+            }
+            right={
+              <TextInput.Icon 
+                name={advancedFiltersVisible ? "chevron-up" : "chevron-down"}
+                onPress={() => setAdvancedFiltersVisible(!advancedFiltersVisible)}
+              />
+            }
+            style={styles.searchInput}
+            theme={{ 
+              roundness: 10,
+              colors: { primary: '#007AFF' } 
+            }}
+          />
+        </View>
+        
+        {advancedFiltersVisible && (
+          <Animated.View entering={FadeIn}>
+            <View style={styles.advancedFiltersContainer}>
+              <TextInput
+                mode="outlined"
+                placeholder="Distributeur"
+                style={styles.advancedFilterInput}
+              />
+              <TouchableOpacity style={styles.datePickerButton}>
+                <MaterialCommunityIcons name="calendar" size={20} color="#007AFF" />
+                <Text style={styles.datePickerText}>Date de commande</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        )}
+
+        <View style={styles.chipContainer}>
+          {Object.keys(STATUS_CONFIG).map(status => (
+            <Chip
               key={status}
-              style={[
-                styles.statusFilterButton,
-                statusFilter === status && styles.activeStatusFilter
-              ]}
+              selected={statusFilter === status}
               onPress={() => setStatusFilter(statusFilter === status ? null : status)}
+              style={[
+                styles.statusChip,
+                statusFilter === status && styles.selectedChip
+              ]}
+              textStyle={[
+                styles.chipText,
+                statusFilter === status && styles.selectedChipText
+              ]}
             >
-              <Text 
-                style={[
-                  styles.statusFilterText,
-                  statusFilter === status && styles.activeStatusFilterText
-                ]}
-              >
-                {status}
-              </Text>
-            </TouchableOpacity>
+              {status}
+            </Chip>
           ))}
         </View>
       </View>
 
-      <FlatList
-        data={filteredPreOrders}
-        renderItem={renderPreOrderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-      />
+      {filteredPreOrders.length === 0 ? (
+        <Animated.View 
+          entering={FadeIn}
+          style={styles.emptyStateContainer}
+        >
+          <MaterialCommunityIcons 
+            name="package-variant-closed" 
+            size={80} 
+            color="#007AFF" 
+          />
+          <Text style={styles.emptyStateText}>
+            Aucune commande trouvée
+          </Text>
+          <Text style={styles.emptyStateSubtext}>
+            Vos commandes apparaîtront ici
+          </Text>
+          <TouchableOpacity 
+            style={styles.createOrderButton}
+            onPress={() => navigation.navigate('CreateOrder')}
+          >
+            <Text style={styles.createOrderButtonText}>
+              Créer une nouvelle commande
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      ) : (
+        <FlatList
+          data={filteredPreOrders}
+          renderItem={renderPreOrderItem}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContainer}
+        />
+      )}
+
+      <StatusChangeModal />
     </SafeAreaView>
   );
 };
@@ -255,100 +332,152 @@ const PreOrderManagement = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F7F9FC',
   },
-  header: {
-    backgroundColor: '#FFFFFF',
+  topBar: {
+    backgroundColor: '#007AFF',
     paddingVertical: 15,
     paddingHorizontal: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    elevation: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 15,
+    top: 15,
+    zIndex: 1,
+  },
+  filterButton: {
+    position: 'absolute',
+    right: 15,
+    top: 15,
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
+    color: 'white',
   },
-  filterContainer: {
-    padding: 15,
-    backgroundColor: '#FFFFFF',
+  searchContainer: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: '#007AFF',
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   searchInput: {
     marginBottom: 10,
+    flex: 1,
   },
-  statusFilterContainer: {
+  advancedFiltersContainer: {
+    marginTop: 10,
+  },
+  advancedFilterInput: {
+    marginBottom: 10,
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F0F4F8',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  datePickerText: {
+    marginLeft: 10,
+    color: '#007AFF',
+  },
+  chipContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  statusFilterButton: {
+  statusChip: {
     flex: 1,
-    paddingVertical: 10,
-    marginHorizontal: 5,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    alignItems: 'center',
+    marginHorizontal: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  activeStatusFilter: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+  selectedChip: {
+    backgroundColor: 'white',
   },
-  statusFilterText: {
-    color: '#666',
+  chipText: {
+    color: 'white',
   },
-  activeStatusFilterText: {
-    color: '#FFFFFF',
-  },
-  listContainer: {
-    paddingHorizontal: 15,
-    paddingTop: 15,
+  selectedChipText: {
+    color: '#007AFF',
   },
   preOrderCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 15,
     marginBottom: 15,
+    borderRadius: 15,
+    overflow: 'hidden',
+    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
-    elevation: 3,
+    shadowRadius: 5,
   },
-  preOrderHeader: {
+  cardHeader: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+  },
+  cardHeaderContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
   },
   shopName: {
-    fontSize: 18,
+    color: 'white',
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 15,
   },
   statusText: {
-    color: '#FFFFFF',
-    fontSize: 12,
+    color: 'white',
     fontWeight: 'bold',
   },
-  distributorName: {
+  cardBody: {
+    backgroundColor: 'white',
+    padding: 15,
+  },
+  orderInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  orderInfoColumn: {
+    flex: 1,
+  },
+  labelText: {
     color: '#666',
-    marginBottom: 10,
+    fontSize: 12,
   },
-  orderDetails: {
-    marginBottom: 10,
-  },
-  totalAmount: {
+  valueText: {
     fontWeight: 'bold',
-    color: '#007AFF',
-    marginTop: 5,
   },
-  itemsContainer: {
+  amountText: {
+    color: '#007AFF',
+    fontWeight: 'bold',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 10,
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  dateColumn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateText: {
+    marginLeft: 5,
+    fontSize: 12,
+    color: '#666',
+  },
+  itemsSection: {
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
     paddingTop: 10,
@@ -358,51 +487,90 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 5,
   },
+  productName: {
+    fontWeight: 'bold',
+  },
+  productDetails: {
+    color: '#666',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyStateText: {
+    marginTop: 15,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#007AFF',
+  },
+  emptyStateSubtext: {
+    color: '#666',
+    marginTop: 5,
+  },
+  createOrderButton: {
+    marginTop: 20,
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  createOrderButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  modalContent: {
+  modalContainer: {
     backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderRadius: 10,
     padding: 20,
-    minHeight: 300,
+    width: '80%',
+    alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  modalSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-    textAlign: 'center',
+    marginBottom: 15,
   },
   statusOption: {
-    padding: 15,
-    backgroundColor: '#f8f8f8',
-    marginBottom: 10,
-    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    width: '100%',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  statusDot: {
+    width: 15,
+    height: 15,
+    borderRadius: 7.5,
+    marginRight: 10,
   },
   statusOptionText: {
     fontSize: 16,
-    marginLeft: 10,
   },
   cancelButton: {
-    marginTop: 10,
-    padding: 15,
-    backgroundColor: '#f1f1f1',
-    borderRadius: 8,
+    marginTop: 15,
+    width: '100%',
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#666',
+    color: '#007AFF',
     fontSize: 16,
   },
+  listContainer: {
+    paddingHorizontal: 15,
+    paddingTop: 15,
+    paddingBottom: 15,
+  }
 });
 
 export default PreOrderManagement;

@@ -101,7 +101,7 @@ const SupplierProductsScreen = ({navigation}) => {
       stock: 150,
       minStock: 50,
       categoryId: '2',
-      image: 'https://placeholder.com/milk.jpg',
+      image: require('../assets/chocolat.jpeg'),
       lastOrder: '2024-03-15'
     },
     {
@@ -112,7 +112,7 @@ const SupplierProductsScreen = ({navigation}) => {
       stock: 45,
       minStock: 30,
       categoryId: '2',
-      image: 'https://placeholder.com/bread.jpg',
+      image: require('../assets/brouette.jpg'),
       lastOrder: '2024-03-18'
     },
     {
@@ -123,7 +123,7 @@ const SupplierProductsScreen = ({navigation}) => {
       stock: 75,
       minStock: 25,
       categoryId: '5',
-      image: 'https://placeholder.com/shampoo.jpg',
+      image: require('../assets/ciment.jpeg'),
       lastOrder: '2024-03-10'
     },
     {
@@ -134,7 +134,7 @@ const SupplierProductsScreen = ({navigation}) => {
       stock: 0,
       minStock: 100,
       categoryId: '4',
-      image: 'https://placeholder.com/coke.jpg',
+      image: require('../assets/iphone.jpg'),
       lastOrder: '2024-03-20'
     },
     {
@@ -145,7 +145,7 @@ const SupplierProductsScreen = ({navigation}) => {
       stock: 60,
       minStock: 20,
       categoryId: '3',
-      image: 'https://placeholder.com/cream.jpg',
+      image: require('../assets/solibra.jpg'),
       lastOrder: '2024-03-12'
     },
     {
@@ -441,11 +441,15 @@ const SupplierProductsScreen = ({navigation}) => {
     return (
       <TouchableOpacity 
         style={styles.productCard} 
-        onPress={() => addToCart(item)}
+        //onPress={() => addToCart(item)}
+        onPress={() => navigation.navigate('ProductDetailsScreen', { 
+          product: item, 
+          categories: categories
+        })}
       >
         <Image
-          source={require('../assets/chocolat.jpeg')}
-          style={styles.productImage}
+        source={item.image} // Use the image directly from the product object
+        style={styles.productImage}
         />
         <View style={styles.productInfo}>
           <Text style={styles.productName}>{item.name}</Text>
@@ -525,7 +529,7 @@ const SupplierProductsScreen = ({navigation}) => {
                 renderItem={({ item }) => (
                   <View style={styles.cartItemCard}>
                     <Image 
-                      source={require('../assets/ciment.jpeg')} 
+                      source={item.image}
                       style={styles.cartItemImage} 
                     />
                     <View style={styles.cartItemDetails}>
@@ -589,12 +593,32 @@ const SupplierProductsScreen = ({navigation}) => {
                     Alert.alert('Panier vide', 'Veuillez ajouter des articles à votre panier.');
                     return;
                   }
+                  // Préparer les informations de la commande à passer
+                  const orderDetails = {
+                    cart: cart.map(item => ({
+                      id: item.id,
+                      name: item.name,
+                      quantity: item.quantity,
+                      price: item.price,
+                      image: item.image,
+                      supplier: item.supplier
+                    })),
+                    totalAmount: getTotalCartAmount(),
+                    totalItems: cart.reduce((total, item) => total + item.quantity, 0),
+                    orderDate: new Date().toISOString()
+                  };
+                  console.log(orderDetails.cart)
                   setIsCartModalVisible(false);
-                  navigation.navigate('PreOrderManagement', { cart });
+                  navigation.navigate('PreOrderManagement', {
+                    cart: orderDetails.cart,
+                    totalAmount: orderDetails.totalAmount,
+                    totalItems: orderDetails.totalItems,
+                    orderDate: orderDetails.orderDate
+                  });
                 }}
               >
-                Valider la commande
-              </Button>
+      Valider la commande
+      </Button>
             </>
           )}
         </View>

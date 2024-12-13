@@ -26,7 +26,7 @@ export default function Navigue({ navigation }) {
         <Stack.Screen name="SupplierSignUpScreen" component={SupplierSignUpScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="SupplierProductsScreen" component={SupplierProductsScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="ProductDetailsScreen" component={ProductDetailsScreen} options={{ headerShown: false }}/>
-        <Stack.Screen name="PreOrderManagement" component={PreOrderManagement} options={{ headerShown: true }}/>
+        <Stack.Screen name="PreOrderManagement" component={PreOrderManagement} options={{ headerShown: false }}/>
       </Stack.Navigator> 
   );
 }

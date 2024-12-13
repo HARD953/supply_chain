@@ -169,8 +169,8 @@ const LoginScreen = ({ navigation }) => {
               activeOpacity={0.7}
               onPress={()=>navigation.navigate('SupplierSignUpScreen')}
             >
-              <MaterialCommunityIcons name="microsoft" size={24} color="#1E4D92" />
-              <Text style={styles.ssoButtonText}>Connexion avec Microsoft</Text>
+              <MaterialCommunityIcons name="store" size={24} color="#1E4D92" />
+              <Text style={styles.ssoButtonText}>Créer un boutique</Text>
             </TouchableOpacity>
 
             <View style={styles.helpContainer}>

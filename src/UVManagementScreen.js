@@ -19,14 +19,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const { width, height } = Dimensions.get('window');
 
 const ColorPalette = {
-  PRIMARY: '#2E7D32',
-  SECONDARY: '#4CAF50',
-  BACKGROUND: '#F0F4F0',
-  CARD_BACKGROUND: '#FFFFFF',
-  TEXT_PRIMARY: '#333333',
-  TEXT_SECONDARY: '#666666',
-  ACCENT: '#81C784',
-  DANGER: '#D32F2F'
+  PRIMARY: '#1E4D92',        // Bleu profond principal
+  SECONDARY: '#2E7DD3',      // Bleu légèrement plus clair pour les éléments secondaires
+  BACKGROUND: '#F0F4F8',     // Fond légèrement bleuté
+  CARD_BACKGROUND: '#FFFFFF', 
+  TEXT_PRIMARY: '#1E4D92',   // Texte principal dans la même teinte de bleu
+  TEXT_SECONDARY: '#4A6D8C', // Texte secondaire dans une nuance de bleu
+  ACCENT: '#5A9BD5',         // Bleu accentué pour les éléments interactifs
+  DANGER: '#D32F2F',         // Conservé tel quel pour les éléments d'erreur
+  LIGHT_BLUE: '#E6EFF7'      // Nouvelle couleur de fond très claire
 };
 
 const MobileOperators = [
@@ -110,7 +111,7 @@ const UVManagementScreen = () => {
     backgroundGradientFrom: ColorPalette.CARD_BACKGROUND,
     backgroundGradientTo: ColorPalette.CARD_BACKGROUND,
     decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(46, 125, 50, ${opacity})`,
+    color: (opacity = 1) => `rgba(30, 77, 146, ${opacity})`,
     labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
     style: { borderRadius: 16 }
   };
@@ -244,12 +245,18 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     padding: 16,
-    paddingTop: 100,
+    paddingTop: 80,
   },
   balanceCard: {
     padding: 16,
     marginBottom: 16,
     backgroundColor: ColorPalette.CARD_BACKGROUND,
+    shadowColor: ColorPalette.PRIMARY,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+    borderRadius: 15,
   },
   balanceHeader: {
     flexDirection: 'row',
@@ -277,9 +284,14 @@ const styles = StyleSheet.create({
   },
   sectionContainer: {
     backgroundColor: ColorPalette.CARD_BACKGROUND,
-    borderRadius: 12,
+    borderRadius: 15,
     padding: 16,
     marginBottom: 16,
+    shadowColor: ColorPalette.PRIMARY,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sectionTitle: {
     fontSize: 18,
@@ -359,11 +371,13 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: ColorPalette.ACCENT,
+    borderColor: ColorPalette.PRIMARY,
     width: '22%',
+    backgroundColor: ColorPalette.LIGHT_BLUE,
   },
   selectedOperator: {
     backgroundColor: ColorPalette.ACCENT,
+    borderColor: ColorPalette.PRIMARY,
   },
   operatorLogo: {
     width: 50,
@@ -377,12 +391,13 @@ const styles = StyleSheet.create({
   input: {
     width: '100%',
     borderWidth: 1,
-    borderColor: ColorPalette.ACCENT,
+    borderColor: ColorPalette.PRIMARY,
     borderRadius: 12,
     padding: 15,
     marginBottom: 16,
     fontSize: 16,
     color: ColorPalette.TEXT_PRIMARY,
+    backgroundColor: ColorPalette.LIGHT_BLUE,
   },
   modalButtons: {
     flexDirection: 'row',

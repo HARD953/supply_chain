@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import {
   View,
   Text,
@@ -7,27 +7,84 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  Dimensions
+  Dimensions,
+  Alert
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Chip } from 'react-native-paper';
+// import { format } from 'date-fns';
+// import { formatCurrency } from 'react-native-localize';
 
-const ProductDetailsScreen = ({ route, navigation }) => {
+const ProductDetailsScreen = memo(({ route, navigation }) => {
   const { product, categories } = route.params;
   const [quantity, setQuantity] = useState(1);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-  const category = categories.find(cat => cat.id === product.categoryId);
+  // Fallback si la catégorie est manquante
+  const category = categories.find(cat => cat.id === product.categoryId) || {
+    name: 'Non catégorisé', 
+    icon: 'tag', 
+    color: '#666'
+  };
+
+  // Obtenir la couleur dynamique du stock
+  const getStockColor = (stock, minStock) => {
+    if (stock <= 0) return '#FF4444';
+    if (stock <= minStock * 0.5) return '#FFA000';
+    return '#00C853';
+  };
+
+  // Gestion de l'ajout au panier
+  const handleAddToCart = () => {
+    if (quantity > product.stock) {
+      Alert.alert(
+        "Stock insuffisant", 
+        `Quantité maximale disponible : ${product.stock}`
+      );
+      return;
+    }
+    
+    setIsAddingToCart(true);
+    try {
+      // Logique d'ajout au panier
+      // Potentiellement un appel à une API ou un store de gestion d'état
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert("Erreur", "Impossible d'ajouter au panier");
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  // Contrôle de la quantité
+  const decrementQuantity = () => {
+    setQuantity(Math.max(1, quantity - 1));
+  };
+
+  const incrementQuantity = () => {
+    setQuantity(prev => Math.min(prev + 1, product.stock));
+  };
 
   const renderHeader = () => (
     <View style={styles.header}>
       <TouchableOpacity 
         style={styles.backButton} 
         onPress={() => navigation.goBack()}
+        accessibilityLabel="Retour"
+        accessibilityRole="button"
       >
-        <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
+        <MaterialCommunityIcons 
+          name="arrow-left" 
+          size={24} 
+          color="#333" 
+          accessibilityHidden
+        />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>Détails du Produit</Text>
-      <TouchableOpacity style={styles.shareButton}>
+      <TouchableOpacity 
+        style={styles.shareButton}
+        accessibilityLabel="Partager"
+      >
         <MaterialCommunityIcons name="share-variant" size={24} color="#333" />
       </TouchableOpacity>
     </View>
@@ -36,9 +93,12 @@ const ProductDetailsScreen = ({ route, navigation }) => {
   const renderProductImage = () => (
     <View style={styles.imageContainer}>
       <Image
-        source={require('../assets/brouette.jpg')}
+        source={product.image}
         style={styles.productImage}
-        resizeMode="cover"
+        resizeMode="contain"
+        // defaultSource={require('./placeholder-image.png')}
+        progressiveRenderingEnabled
+        cache="force-cache"
       />
     </View>
   );
@@ -48,22 +108,24 @@ const ProductDetailsScreen = ({ route, navigation }) => {
       <Text style={styles.productName}>{product.name}</Text>
       <View style={styles.categoryTag}>
         <MaterialCommunityIcons
-          name={category ? category.icon : 'tag'}
+          name={category.icon}
           size={16}
-          color={category ? category.color : '#666'}
+          color={category.color}
         />
-        <Text style={[styles.categoryTagText, { color: category ? category.color : '#666' }]}>
-          {category ? category.name : 'Non catégorisé'}
+        <Text style={[styles.categoryTagText, { color: category.color }]}>
+          {category.name}
         </Text>
       </View>
       <Text style={styles.supplierName}>Fournisseur: {product.supplier}</Text>
       <View style={styles.priceContainer}>
-        <Text style={styles.price}>{product.price.toFixed(2)} FCFA</Text>
+        <Text style={styles.price}>
+          {product.price}
+        </Text>
         <View style={styles.stockInfo}>
           <MaterialCommunityIcons 
             name="warehouse" 
             size={16} 
-            color={product.stock <= product.minStock * 0.5 ? '#FF4444' : product.stock <= product.minStock ? '#FFA000' : '#00C853'}
+            color={getStockColor(product.stock, product.minStock)}
           />
           <Text style={styles.stockText}>Stock: {product.stock}</Text>
         </View>
@@ -76,15 +138,17 @@ const ProductDetailsScreen = ({ route, navigation }) => {
       <Text style={styles.quantityLabel}>Quantité</Text>
       <View style={styles.quantitySelector}>
         <TouchableOpacity 
-          onPress={() => setQuantity(Math.max(1, quantity - 1))}
+          onPress={decrementQuantity}
           style={styles.quantityButton}
+          accessibilityLabel="Réduire la quantité"
         >
           <MaterialCommunityIcons name="minus" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.quantityText}>{quantity}</Text>
         <TouchableOpacity 
-          onPress={() => setQuantity(quantity + 1)}
+          onPress={incrementQuantity}
           style={styles.quantityButton}
+          accessibilityLabel="Augmenter la quantité"
         >
           <MaterialCommunityIcons name="plus" size={24} color="#333" />
         </TouchableOpacity>
@@ -97,7 +161,9 @@ const ProductDetailsScreen = ({ route, navigation }) => {
       <Text style={styles.sectionTitle}>Informations supplémentaires</Text>
       <View style={styles.infoRow}>
         <Text style={styles.infoLabel}>Dernière commande</Text>
-        <Text style={styles.infoValue}>{product.lastOrder}</Text>
+        <Text style={styles.infoValue}>
+          {product.lastOrder}
+        </Text>
       </View>
       <View style={styles.infoRow}>
         <Text style={styles.infoLabel}>Stock minimum</Text>
@@ -111,12 +177,11 @@ const ProductDetailsScreen = ({ route, navigation }) => {
       <Button 
         mode="contained" 
         style={styles.addToCartButton}
-        onPress={() => {
-          // Add to cart logic
-          navigation.goBack();
-        }}
+        loading={isAddingToCart}
+        disabled={isAddingToCart || product.stock === 0}
+        onPress={handleAddToCart}
       >
-        Ajouter au panier
+        {product.stock === 0 ? "Rupture de stock" : "Ajouter au panier"}
       </Button>
     </View>
   );
@@ -136,7 +201,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
       </ScrollView>
     </SafeAreaView>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -175,7 +240,6 @@ const styles = StyleSheet.create({
   productImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   productInfoContainer: {
     padding: 16,
