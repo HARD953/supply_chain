@@ -544,7 +544,7 @@ const SupplierProductsScreen = ({navigation}) => {
                           onPress={() => updateCartQuantity(item.id, item.quantity - 1)}
                           style={styles.quantityButton}
                         >
-                          <MaterialCommunityIcons name="minus" size={20} color="#333" />
+                          <MaterialCommunityIcons name="minus" size={20} color="#b937a8" />
                         </TouchableOpacity>
                         <Text style={styles.cartItemQuantity}>
                           {item.quantity}
@@ -553,7 +553,7 @@ const SupplierProductsScreen = ({navigation}) => {
                           onPress={() => updateCartQuantity(item.id, item.quantity + 1)}
                           style={styles.quantityButton}
                         >
-                          <MaterialCommunityIcons name="plus" size={20} color="#333" />
+                          <MaterialCommunityIcons name="plus" size={20} color="#b937a8" />
                         </TouchableOpacity>
                         <Text style={styles.cartItemPrice}>
                           {(item.price * item.quantity).toFixed(2)} FCFA
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
         headerTitle: {
           fontSize: 18,
           fontWeight: 'bold',
-          color: '#333',
+          color: 'white',
         },
         headerActions: {
           flexDirection: 'row',
@@ -769,75 +769,13 @@ const styles = StyleSheet.create({
         productList: {
           padding: 16,
         },
-        // productCard: {
-        //   flexDirection: 'row',
-        //   backgroundColor: '#fff',
-        //   borderRadius: 12,
-        //   padding: 12,
-        //   marginBottom: 12,
-        //   elevation: 2,
-        //   shadowColor: '#000',
-        //   shadowOffset: { width: 0, height: 1 },
-        //   shadowOpacity: 0.1,
-        //   shadowRadius: 2,
-        // },
-        // productImage: {
-        //   width: 100,
-        //   height: 80,
-        //   borderRadius: 8,
-        //   backgroundColor: '#f0f0f0',
-        // },
-        // productInfo: {
-        //   flex: 1,
-        //   marginLeft: 12,
-        // },
-        // productName: {
-        //   fontSize: 16,
-        //   fontWeight: '600',
-        //   color: '#333',
-        //   marginBottom: 4,
-        // },
-        // categoryTag: {
-        //   flexDirection: 'row',
-        //   alignItems: 'center',
-        //   marginBottom: 4,
-        // },
-        // categoryTagText: {
-        //   fontSize: 12,
-        //   marginLeft: 4,
-        //   fontWeight: '500',
-        // },
-        // supplierName: {
-        //   fontSize: 14,
-        //   color: '#666',
-        //   marginBottom: 8,
-        // },
-        // productDetails: {
-        //   flexDirection: 'row',
-        //   alignItems: 'center',
-        //   justifyContent: 'space-between',
-        // },
-        // price: {
-        //   fontSize: 16,
-        //   fontWeight: 'bold',
-        //   color: '#333',
-        // },
-        // stockBadge: {
-        //   paddingHorizontal: 8,
-        //   paddingVertical: 4,
-        //   height:''
-        // },
-        // stockText: {
-        //   fontSize: 12,
-        //   fontWeight: '500',
-        // },
         headerContainer: {
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
           paddingHorizontal: 16,
           paddingVertical: 10,
-          backgroundColor: '#fff',
+          backgroundColor: '#b937a8',
           elevation: 2,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
@@ -850,7 +788,7 @@ const styles = StyleSheet.create({
         headerRightSection: {
           flexDirection: 'row',
           alignItems: 'center',
-          backgroundColor: '#1E4D92',
+          backgroundColor: '#9c7fa7',
           borderRadius:30,
           width:'10%',
           height:'150%',
@@ -859,7 +797,7 @@ const styles = StyleSheet.create({
         headerTitle: {
           fontSize: 18,
           fontWeight: 'bold',
-          color: '#333',
+          color: 'white',
         },
         cartFab: {
           marginLeft: 10,
@@ -1037,12 +975,12 @@ const styles = StyleSheet.create({
         cartItemName: {
           fontSize: 16,
           fontWeight: '600',
-          color: '#333',
+          color: '#b937a8',
           marginBottom: 5,
         },
         cartItemSupplier: {
           fontSize: 12,
-          color: '#666',
+          color: '#b937a8',
           marginBottom: 5,
         },
         cartItemQuantityContainer: {
@@ -1057,13 +995,14 @@ const styles = StyleSheet.create({
         cartItemQuantity: {
           marginHorizontal: 10,
           fontSize: 16,
-          fontWeight: '500',
+          fontWeight: '800',
+          color:'#b937a8'
         },
         cartItemPrice: {
           marginLeft: 'auto',
           fontSize: 14,
           fontWeight: 'bold',
-          color: '#1E4D92',
+          color: '#b937a8',
         },
         deleteItemButton: {
           padding: 10,
@@ -1081,7 +1020,7 @@ const styles = StyleSheet.create({
         },
         cartSummaryLabel: {
           fontSize: 16,
-          color: '#666',
+          color: '#b937a8',
         },
         cartSummaryValue: {
           fontSize: 16,
@@ -1090,11 +1029,11 @@ const styles = StyleSheet.create({
         cartSummaryTotal: {
           fontSize: 18,
           fontWeight: 'bold',
-          color: '#1E4D92',
+          color: '#b937a8',
         },
         validateOrderButton: {
           margin: 20,
-          backgroundColor: '#1E4D92',
+          backgroundColor: '#b937a8',
         },  
   userStatusContainer: {
     flexDirection: 'row',
@@ -1114,7 +1053,7 @@ const styles = StyleSheet.create({
     right: 10,
   },
   addButton: {
-    backgroundColor: '#1E4D92',
+    backgroundColor: '#b937a8',
     borderRadius: 20,
     width: 30,
     height: 30,
@@ -1131,7 +1070,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -8,
     right: -8,
-    backgroundColor: '#1E4D92',
+    backgroundColor: '#b937a8',
     borderRadius: 10,
     width: 20,
     height: 20,

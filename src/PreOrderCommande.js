@@ -332,10 +332,10 @@ const PreOrderManagement = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F9FC',
+    backgroundColor: '#F3E5F5', // Light purple background
   },
   topBar: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#b937a8',
     paddingVertical: 15,
     paddingHorizontal: 20,
     flexDirection: 'row',
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: 15,
     paddingVertical: 10,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#b937a8',
   },
   searchRow: {
     flexDirection: 'row',
@@ -381,14 +381,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0F4F8',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     padding: 10,
     borderRadius: 10,
     marginBottom: 10,
   },
   datePickerText: {
     marginLeft: 10,
-    color: '#007AFF',
+    color: 'white',
+    fontWeight: 'bold',
   },
   chipContainer: {
     flexDirection: 'row',
@@ -406,16 +407,16 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   selectedChipText: {
-    color: '#007AFF',
+    color: '#b937a8',
   },
   preOrderCard: {
     marginBottom: 15,
     borderRadius: 15,
     overflow: 'hidden',
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: '#b937a8',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 5,
   },
   cardHeader: {
@@ -437,7 +438,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   cardBody: {
-    backgroundColor: 'white',
+    backgroundColor: '#FCE4EC', // Light pink background
     padding: 15,
   },
   orderInfoRow: {
@@ -453,14 +454,15 @@ const styles = StyleSheet.create({
   },
   valueText: {
     fontWeight: 'bold',
+    color: '#b937a8', // Highlight text with new color
   },
   amountText: {
-    color: '#007AFF',
+    color: '#b937a8',
     fontWeight: 'bold',
   },
   divider: {
     height: 1,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: 'rgba(185,55,168,0.2)', // Subtle divider
     marginVertical: 10,
   },
   dateContainer: {
@@ -479,7 +481,7 @@ const styles = StyleSheet.create({
   },
   itemsSection: {
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: 'rgba(185,55,168,0.2)',
     paddingTop: 10,
   },
   productItem: {
@@ -489,6 +491,7 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontWeight: 'bold',
+    color: '#b937a8',
   },
   productDetails: {
     color: '#666',
@@ -498,12 +501,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#F3E5F5', // Consistent with container background
   },
   emptyStateText: {
     marginTop: 15,
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#b937a8',
   },
   emptyStateSubtext: {
     color: '#666',
@@ -511,7 +515,7 @@ const styles = StyleSheet.create({
   },
   createOrderButton: {
     marginTop: 20,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#b937a8',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 10,
@@ -524,7 +528,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(185,55,168,0.5)', // Translucent modal background
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -534,11 +538,14 @@ const styles = StyleSheet.create({
     padding: 20,
     width: '80%',
     alignItems: 'center',
+    borderTopWidth: 5,
+    borderTopColor: '#b937a8',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 15,
+    color: '#b937a8',
   },
   statusOption: {
     flexDirection: 'row',
@@ -546,7 +553,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     width: '100%',
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: 'rgba(185,55,168,0.2)',
   },
   statusDot: {
     width: 15,
@@ -556,6 +563,7 @@ const styles = StyleSheet.create({
   },
   statusOptionText: {
     fontSize: 16,
+    color: '#333',
   },
   cancelButton: {
     marginTop: 15,
@@ -563,8 +571,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#007AFF',
+    color: '#b937a8',
     fontSize: 16,
+    fontWeight: 'bold',
   },
   listContainer: {
     paddingHorizontal: 15,

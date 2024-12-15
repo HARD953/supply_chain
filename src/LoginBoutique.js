@@ -170,7 +170,7 @@ const LoginScreen = ({ navigation }) => {
               onPress={()=>navigation.navigate('SupplierSignUpScreen')}
             >
               <MaterialCommunityIcons name="store" size={24} color="#1E4D92" />
-              <Text style={styles.ssoButtonText}>Créer un boutique</Text>
+              <Text style={styles.ssoButtonText}>Créer une boutique</Text>
             </TouchableOpacity>
 
             <View style={styles.helpContainer}>
