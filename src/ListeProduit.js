@@ -10,7 +10,8 @@ import {
   TextInput,
   RefreshControl,
   Modal,
-  Dimensions
+  Dimensions,
+  ScrollView
 } from 'react-native';
 import { Chip, FAB, Menu, Divider, Badge, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -26,6 +27,24 @@ const SupplierProductsScreen = ({navigation}) => {
   const [cart, setCart] = useState([]);
   const [isCartModalVisible, setIsCartModalVisible] = useState(false);
   const [user, setUser] = useState(null); // Add user state at the top of the component
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isProductDetailsModalVisible, setIsProductDetailsModalVisible] = useState(false);
+  const [selectedProductFormat, setSelectedProductFormat] = useState(null);
+
+  const productFormats = {
+    '1': [
+      { id: '1_small', name: 'Petit format', price: 1200, volume: '250ml' },
+      { id: '1_medium', name: 'Format moyen', price: 1500, volume: '500ml' },
+      { id: '1_large', name: 'Grand format', price: 2000, volume: '1L' }
+    ],
+    '2': [
+      { id: '2_small', name: 'Pack de 4', price: 2000, quantity: '4 tranches' },
+      { id: '2_medium', name: 'Pack de 8', price: 3500, quantity: '8 tranches' },
+      { id: '2_large', name: 'Pack de 12', price: 5000, quantity: '12 tranches' }
+    ],
+    // Add more product formats as needed
+  };
+
   const categories = [
     { 
       id: '0', 
@@ -441,11 +460,7 @@ const SupplierProductsScreen = ({navigation}) => {
     return (
       <TouchableOpacity 
         style={styles.productCard} 
-        //onPress={() => addToCart(item)}
-        onPress={() => navigation.navigate('ProductDetailsScreen', { 
-          product: item, 
-          categories: categories
-        })}
+        onPress={() => openProductDetailsModal(item)}
       >
         <Image
         source={item.image} // Use the image directly from the product object
@@ -485,16 +500,109 @@ const SupplierProductsScreen = ({navigation}) => {
           <TouchableOpacity style={styles.moreButton}>
             <MaterialCommunityIcons name="dots-vertical" size={24} color="#666" />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.addButton} 
-            onPress={() => addToCart(item)}
-          >
-            <MaterialCommunityIcons name="plus" size={24} color="#fff" />
-          </TouchableOpacity>
+          
         </View>
       </TouchableOpacity>
     );
   };
+
+  const openProductDetailsModal = (product) => {
+    setSelectedProduct(product);
+    setSelectedProductFormat(null); // Reset format selection
+    setIsProductDetailsModalVisible(true);
+  };
+
+  const renderProductDetailsModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={isProductDetailsModalVisible}
+      onRequestClose={() => setIsProductDetailsModalVisible(false)}
+    >
+      {selectedProduct && (
+        <View style={styles.productDetailsModalOverlay}>
+          <View style={styles.productDetailsModalContainer}>
+            {/* Close Button */}
+            <TouchableOpacity 
+              style={styles.closeProductModalButton}
+              onPress={() => setIsProductDetailsModalVisible(false)}
+            >
+              <MaterialCommunityIcons name="close" size={24} color="#333" />
+            </TouchableOpacity>
+
+            {/* Product Image */}
+            <Image
+              source={selectedProduct.image}
+              style={styles.productDetailsImage}
+            />
+
+            {/* Product Details */}
+            <ScrollView 
+              style={styles.productDetailsScrollView}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.productDetailsName}>{selectedProduct.name}</Text>
+              <Text style={styles.productDetailsSupplier}>{selectedProduct.supplier}</Text>
+
+              {/* Product Formats */}
+              <Text style={styles.formatSectionTitle}>Formats disponibles</Text>
+              <View style={styles.formatContainer}>
+                {productFormats[selectedProduct.id]?.map((format) => (
+                  <TouchableOpacity
+                    key={format.id}
+                    style={[
+                      styles.formatCard, 
+                      selectedProductFormat?.id === format.id && styles.selectedFormatCard
+                    ]}
+                    onPress={() => setSelectedProductFormat(format)}
+                  >
+                    <Text style={styles.formatName}>{format.name}</Text>
+                    <Text style={styles.formatDetails}>
+                      {format.volume ? `Volume: ${format.volume}` : `Quantité: ${format.quantity}`}
+                    </Text>
+                    <Text style={styles.formatPrice}>{format.price} FCFA</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Additional Product Details */}
+              <View style={styles.additionalDetailsContainer}>
+                <View style={styles.detailRow}>
+                  <MaterialCommunityIcons name="cube-outline" size={24} color="#666" />
+                  <Text style={styles.detailText}>Stock: {selectedProduct.stock}</Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <MaterialCommunityIcons name="calendar-today" size={24} color="#666" />
+                  <Text style={styles.detailText}>Dernière commande: {selectedProduct.lastOrder}</Text>
+                </View>
+              </View>
+
+              {/* Add to Cart Button */}
+              <Button 
+                mode="contained" 
+                style={styles.addToCartButton}
+                disabled={!selectedProductFormat}
+                onPress={() => {
+                  if (selectedProductFormat) {
+                    const productToAdd = {
+                      ...selectedProduct,
+                      ...selectedProductFormat
+                    };
+                    addToCart(productToAdd);
+                    setIsProductDetailsModalVisible(false);
+                  }
+                }}
+              >
+                {selectedProductFormat 
+                  ? `Ajouter au panier (${selectedProductFormat.price} FCFA)` 
+                  : 'Sélectionnez un format'}
+              </Button>
+            </ScrollView>
+          </View>
+        </View>
+      )}
+    </Modal>
+  );
 
   const renderCartModal = () => (
     <Modal
@@ -633,6 +741,7 @@ const SupplierProductsScreen = ({navigation}) => {
       {renderSearchBar()}
       {renderCategoryNavigation()}
       {renderSupplierFilter()}
+      {renderProductDetailsModal()}
       
       <FlatList
         data={filteredProducts}
@@ -775,7 +884,7 @@ const styles = StyleSheet.create({
           alignItems: 'center',
           paddingHorizontal: 16,
           paddingVertical: 10,
-          backgroundColor: '#b937a8',
+          backgroundColor: '#fff',
           elevation: 2,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
@@ -797,7 +906,7 @@ const styles = StyleSheet.create({
         headerTitle: {
           fontSize: 18,
           fontWeight: 'bold',
-          color: 'white',
+          color: 'black',
         },
         cartFab: {
           marginLeft: 10,
@@ -1082,6 +1191,102 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  productDetailsModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  productDetailsModalContainer: {
+    backgroundColor: '#F5F5F5',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '90%',
+    paddingBottom: 20,
+  },
+  closeProductModalButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 10,
+    padding: 10,
+  },
+  productDetailsImage: {
+    width: '100%',
+    height: 400,
+    resizeMode: 'cover',
+  },
+  productDetailsScrollView: {
+    paddingHorizontal: 20,
+  },
+  productDetailsName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 15,
+  },
+  productDetailsSupplier: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 15,
+  },
+  formatSectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginVertical: 15,
+  },
+  formatContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  formatCard: {
+    width: '30%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  selectedFormatCard: {
+    borderColor: '#b937a8',
+    backgroundColor: '#F3E5F5',
+  },
+  formatName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  formatDetails: {
+    fontSize: 12,
+    color: '#666',
+    marginVertical: 5,
+  },
+  formatPrice: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#b937a8',
+  },
+  additionalDetailsContainer: {
+    marginTop: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 15,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  detailText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: '#333',
+  },
+  addToCartButton: {
+    marginTop: 20,
+    backgroundColor: '#b937a8',
   },
 });
 
