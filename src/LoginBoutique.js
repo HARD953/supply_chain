@@ -144,7 +144,7 @@ const LoginScreen = ({ navigation }) => {
 
             <TouchableOpacity 
               style={styles.loginButton}
-              onPress={()=>{navigation.navigate('SupplierProductsScreen')}}
+              onPress={()=>{navigation.navigate('Dashboard')}}
               activeOpacity={0.8}
             >
               <LinearGradient
@@ -167,7 +167,8 @@ const LoginScreen = ({ navigation }) => {
             <TouchableOpacity 
               style={styles.ssoButton}
               activeOpacity={0.7}
-              onPress={()=>navigation.navigate('SupplierSignUpScreen')}
+             // onPress={()=>navigation.navigate('SupplierSignUpScreen')}
+             onPress={()=>navigation.navigate('SupplierSignUpScreen')}
             >
               <MaterialCommunityIcons name="store" size={24} color="#1E4D92" />
               <Text style={styles.ssoButtonText}>Créer une boutique</Text>

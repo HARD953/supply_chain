@@ -9,6 +9,7 @@ import {
   StatusBar,
   Modal,
   Dimensions,
+  Image
 } from 'react-native';
 import { TextInput, Chip } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -66,7 +67,8 @@ const PreOrderManagement = ({ route, navigation }) => {
         items: cart.map(item => ({
           name: item.name,
           quantity: item.quantity,
-          unitPrice: item.price
+          unitPrice: item.price,
+          image: item.image || 'https://via.placeholder.com/100' // Placeholder image if no image provided
         }))
       };
 
@@ -195,6 +197,23 @@ const PreOrderManagement = ({ route, navigation }) => {
               <Text style={styles.productDetails}>
                 {product.quantity} x {product.unitPrice.toLocaleString()} FCFA
               </Text>
+            </View>
+          ))}
+        </View>
+        <View style={styles.itemsSection}>
+          {item.items.map((product, prodIndex) => (
+            <View key={prodIndex} style={styles.productItemContainer}>
+              <Image 
+                source={{ uri: product.image }}
+                style={styles.productImage}
+                resizeMode="cover"
+              />
+              <View style={styles.productTextContainer}>
+                <Text style={styles.productName}>{product.name}</Text>
+                <Text style={styles.productDetails}>
+                  {product.quantity} x {product.unitPrice.toLocaleString()} FCFA
+                </Text>
+              </View>
             </View>
           ))}
         </View>
@@ -332,7 +351,7 @@ const PreOrderManagement = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3E5F5', // Light purple background
+    backgroundColor: '#FFFFFF', // Light purple background
   },
   topBar: {
     backgroundColor: '#b937a8',
@@ -579,7 +598,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingTop: 15,
     paddingBottom: 15,
-  }
+  },
+  productItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    backgroundColor: 'rgba(185,55,168,0.05)',
+    borderRadius: 10,
+    padding: 10,
+  },
+  productImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    marginRight: 15,
+  },
+  productTextContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
 });
 
 export default PreOrderManagement;

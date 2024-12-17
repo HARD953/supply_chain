@@ -178,83 +178,6 @@ const SupplierProductsScreen = ({navigation}) => {
       image: 'https://placeholder.com/cement.jpg',
       lastOrder: '2024-03-25'
     },
-    {
-      id: '7',
-      name: 'Smartphone',
-      supplier: 'Samsung',
-      price: 500,
-      stock: 30,
-      minStock: 10,
-      categoryId: '6',
-      image: 'https://placeholder.com/phone.jpg',
-      lastOrder: '2024-03-22'
-    },
-    {
-      id: '8',
-      name: 'Smartphone',
-      supplier: 'Samsung',
-      price: 500,
-      stock: 30,
-      minStock: 10,
-      categoryId: '6',
-      image: 'https://placeholder.com/phone.jpg',
-      lastOrder: '2024-03-22'
-    },
-    {
-      id: '9',
-      name: 'Smartphone',
-      supplier: 'Samsung',
-      price: 500,
-      stock: 30,
-      minStock: 10,
-      categoryId: '6',
-      image: 'https://placeholder.com/phone.jpg',
-      lastOrder: '2024-03-22'
-    },
-    {
-      id: '10',
-      name: 'Smartphone',
-      supplier: 'Samsung',
-      price: 500,
-      stock: 30,
-      minStock: 10,
-      categoryId: '6',
-      image: 'https://placeholder.com/phone.jpg',
-      lastOrder: '2024-03-22'
-    },
-    {
-      id: '11',
-      name: 'Smartphone',
-      supplier: 'Samsung',
-      price: 500,
-      stock: 30,
-      minStock: 10,
-      categoryId: '6',
-      image: 'https://placeholder.com/phone.jpg',
-      lastOrder: '2024-03-22'
-    },
-    {
-      id: '12',
-      name: 'Smartphone',
-      supplier: 'Samsung',
-      price: 500,
-      stock: 30,
-      minStock: 10,
-      categoryId: '6',
-      image: 'https://placeholder.com/phone.jpg',
-      lastOrder: '2024-03-22'
-    },
-    {
-      id: '13',
-      name: 'Smartphone',
-      supplier: 'Samsung',
-      price: 500,
-      stock: 30,
-      minStock: 10,
-      categoryId: '6',
-      image: 'https://placeholder.com/phone.jpg',
-      lastOrder: '2024-03-22'
-    }
   ]);
 
   const suppliers = [
@@ -376,25 +299,6 @@ const SupplierProductsScreen = ({navigation}) => {
     </View>
   );
 
-  // const renderHeader = () => (
-  //   <View style={styles.header}>
-  //     <Text style={styles.headerTitle}>Produits Distributeurs</Text>
-  //     <View style={styles.headerActions}>
-  //       <TouchableOpacity 
-  //         style={styles.iconButton}
-  //         onPress={() => setFilterMenuVisible(true)}
-  //       >
-  //         <MaterialCommunityIcons name="filter-variant" size={24} color="#333" />
-  //       </TouchableOpacity>
-  //       <TouchableOpacity 
-  //         style={styles.iconButton}
-  //         onPress={() => setSortMenuVisible(true)}
-  //       >
-  //         <MaterialCommunityIcons name="sort" size={24} color="#333" />
-  //       </TouchableOpacity>
-  //     </View>
-  //   </View>
-  // );
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
@@ -785,8 +689,6 @@ const SupplierProductsScreen = ({navigation}) => {
         <Divider />
         <Menu.Item onPress={() => {}} title="Réinitialiser les filtres" />
       </Menu>
-      
-
     </SafeAreaView>
   );
 };
@@ -897,7 +799,7 @@ const styles = StyleSheet.create({
         headerRightSection: {
           flexDirection: 'row',
           alignItems: 'center',
-          backgroundColor: '#9c7fa7',
+          backgroundColor: '#b937a8',
           borderRadius:30,
           width:'10%',
           height:'150%',
@@ -1215,6 +1117,9 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 400,
     resizeMode: 'cover',
+
+    borderBottomWidth:2,
+    borderBottomColor:'#c58bce'
   },
   productDetailsScrollView: {
     paddingHorizontal: 20,

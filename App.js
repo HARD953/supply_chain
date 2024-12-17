@@ -3,6 +3,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet } from 'react-native';
 import Navigators from './src/Navigator';
 import OrderHistoryScreen from './src/OrderHistoryScreen';
+import ProductCatalog from './src/ProductCatalog'
 
 
 export default function App() {
@@ -13,7 +14,7 @@ export default function App() {
           style="light" 
           backgroundColor="#b937a8" 
         />
-        <OrderHistoryScreen />
+        <ProductCatalog />
       </SafeAreaView>
     </SafeAreaProvider>
   );
