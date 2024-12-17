@@ -160,7 +160,7 @@ const Dashboard = ({ navigation }) => {
       <View style={styles.quickActionButtons}>
         <TouchableOpacity 
           style={styles.quickActionButton}
-          onPress={() => navigation.navigate('CreateOrder')}
+          onPress={() => navigation.navigate('ProductCatalog')}
         >
           <View style={styles.quickActionButtonContent}>
             <MaterialCommunityIcons name="plus-circle" size={24} color="#b937a8" />

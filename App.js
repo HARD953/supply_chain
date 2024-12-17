@@ -4,7 +4,8 @@ import { StyleSheet } from 'react-native';
 import Navigators from './src/Navigator';
 import OrderHistoryScreen from './src/OrderHistoryScreen';
 import ProductCatalog from './src/ProductCatalog'
-
+import OrderHistory from './src/OrderHistory'
+import SupplierProductsScreen from './src/ListeProduit'
 
 export default function App() {
   return (
@@ -14,7 +15,7 @@ export default function App() {
           style="light" 
           backgroundColor="#b937a8" 
         />
-        <ProductCatalog />
+        <Navigators />
       </SafeAreaView>
     </SafeAreaProvider>
   );

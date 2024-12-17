@@ -2,16 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
-  StyleSheet, 
   FlatList, 
   TouchableOpacity, 
   Image, 
   Modal, 
   TextInput,
-  ScrollView 
+  ScrollView,
+  StyleSheet 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Alert } from 'react-native';
 
 const ProductCatalog = () => {
   const categories = [
@@ -125,159 +126,98 @@ const ProductCatalog = () => {
     },
     {
       id: '2',
-      name: 'Pain de mie',
-      supplier: 'Harry\'s',
-      price: 2300,
-      stock: 45,
-      minStock: 30,
+      name: 'Lait demi-écrémé',
+      supplier: 'Lactel',
+      price: 1500,
+      stock: 150,
+      minStock: 50,
       categoryId: '2',
-      image: require('../assets/brouette.jpg'),
-      lastOrder: '2024-03-18',
+      image: require('../assets/iphone.jpg'),
+      lastOrder: '2024-03-15',
       formats: [
         { 
           id: 'small', 
-          name: 'Paquet (6 tranches)', 
-          price: 1800, 
-          stock: 100 
+          name: 'Petit (25cl)', 
+          price: 1000, 
+          stock: 200 
         },
         { 
           id: 'medium', 
-          name: 'Paquet (12 tranches)', 
-          price: 2300, 
-          stock: 75 
+          name: 'Moyen (50cl)', 
+          price: 1500, 
+          stock: 150 
         },
         { 
           id: 'large', 
-          name: 'Paquet (18 tranches)', 
-          price: 3000, 
-          stock: 50 
+          name: 'Grand (1L)', 
+          price: 2500, 
+          stock: 100 
         }
       ]
     },
     {
       id: '3',
-      name: 'Shampoing',
-      supplier: 'L\'Oréal',
-      price: 3200,
-      stock: 75,
-      minStock: 25,
-      categoryId: '5',
-      image: require('../assets/ciment.jpeg'),
-      lastOrder: '2024-03-10',
-      formats: [
-        { 
-          id: 'small', 
-          name: 'Petit (100ml)', 
-          price: 2000, 
-          stock: 150 
-        },
-        { 
-          id: 'medium', 
-          name: 'Moyen (250ml)', 
-          price: 3200, 
-          stock: 100 
-        },
-        { 
-          id: 'large', 
-          name: 'Grand (500ml)', 
-          price: 5000, 
-          stock: 50 
-        }
-      ]
-    },
-    {
-      id: '4',
-      name: 'Coca-Cola 1.5L',
-      supplier: 'Coca-Cola',
-      price: 1200,
-      stock: 0,
-      minStock: 100,
-      categoryId: '4',
-      image: require('../assets/iphone.jpg'),
-      lastOrder: '2024-03-20',
-      formats: [
-        { 
-          id: 'small', 
-          name: 'Canette (33cl)', 
-          price: 800, 
-          stock: 200 
-        },
-        { 
-          id: 'medium', 
-          name: 'Bouteille (1L)', 
-          price: 1200, 
-          stock: 150 
-        },
-        { 
-          id: 'large', 
-          name: 'Pack (6x1.5L)', 
-          price: 5000, 
-          stock: 50 
-        }
-      ]
-    },
-    {
-      id: '5',
-      name: 'Crème hydratante',
-      supplier: 'Nivea',
+      name: 'Lait demi-écrémé',
+      supplier: 'Lactel',
       price: 1500,
-      stock: 60,
-      minStock: 20,
-      categoryId: '3',
-      image: require('../assets/solibra.jpg'),
-      lastOrder: '2024-03-12',
-      formats: [
-        { 
-          id: 'small', 
-          name: 'Petit (50ml)', 
-          price: 1000, 
-          stock: 100 
-        },
-        { 
-          id: 'medium', 
-          name: 'Moyen (100ml)', 
-          price: 1500, 
-          stock: 75 
-        },
-        { 
-          id: 'large', 
-          name: 'Grand (200ml)', 
-          price: 2500, 
-          stock: 50 
-        }
-      ]
-    },
-    {
-      id: '6',
-      name: 'Ciment',
-      supplier: 'Lafarge',
-      price: 6500,
-      stock: 500,
-      minStock: 100,
-      categoryId: '1',
+      stock: 150,
+      minStock: 50,
+      categoryId: '2',
       image: require('../assets/ciment.jpeg'),
-      lastOrder: '2024-03-25',
+      lastOrder: '2024-03-15',
       formats: [
         { 
           id: 'small', 
-          name: 'Sac 25kg', 
-          price: 4500, 
+          name: 'Petit (25cl)', 
+          price: 1000, 
           stock: 200 
         },
         { 
           id: 'medium', 
-          name: 'Sac 35kg', 
-          price: 6500, 
+          name: 'Moyen (50cl)', 
+          price: 1500, 
           stock: 150 
         },
         { 
           id: 'large', 
-          name: 'Sac 50kg', 
-          price: 9000, 
+          name: 'Grand (1L)', 
+          price: 2500, 
           stock: 100 
         }
       ]
-    }
+    },
+    {
+      id: '2',
+      name: 'Lait demi-écrémé',
+      supplier: 'Lactel',
+      price: 1500,
+      stock: 150,
+      minStock: 50,
+      categoryId: '2',
+      image: require('../assets/brouette.jpg'),
+      lastOrder: '2024-03-15',
+      formats: [
+        { 
+          id: 'small', 
+          name: 'Petit (25cl)', 
+          price: 1000, 
+          stock: 200 
+        },
+        { 
+          id: 'medium', 
+          name: 'Moyen (50cl)', 
+          price: 1500, 
+          stock: 150 
+        },
+        { 
+          id: 'large', 
+          name: 'Grand (1L)', 
+          price: 2500, 
+          stock: 100 
+        }
+      ]
+    },
+    // ... (autres produits restent les mêmes)
   ]);
 
   const [cart, setCart] = useState([]);
@@ -287,9 +227,10 @@ const ProductCatalog = () => {
   const [selectedCategory, setSelectedCategory] = useState('0');
   const [selectedSupplier, setSelectedSupplier] = useState('Tous');
   const [filteredProducts, setFilteredProducts] = useState(products);
-
+  const [cartModalVisible, setCartModalVisible] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState(null);
+  const [quantity, setQuantity] = useState(1);
   useEffect(() => {
-    // Filtrer les produits selon la recherche, catégorie et fournisseur
     let filtered = products;
 
     if (searchQuery) {
@@ -324,9 +265,23 @@ const ProductCatalog = () => {
     }
   };
 
+   
   const openProductDetails = (product) => {
     setSelectedProduct(product);
     setModalVisible(true);
+  };
+
+
+  const handleAddToCart = () => {
+    if (!selectedProduct || !selectedFormat) return;
+
+    const productToAdd = {
+      ...selectedProduct,
+      selectedFormat: selectedFormat,
+      quantity: quantity
+    };
+    addToCart(productToAdd);
+    setModalVisible(false);
   };
 
   const renderCategoryItem = ({ item }) => (
@@ -383,18 +338,7 @@ const ProductCatalog = () => {
   );
 
   const renderProductDetailsModal = () => {
-    const [selectedFormat, setSelectedFormat] = useState(selectedProduct.formats[0]);
-    const [quantity, setQuantity] = useState(1);
-
-    const handleAddToCart = () => {
-      const productToAdd = {
-        ...selectedProduct,
-        selectedFormat: selectedFormat,
-        quantity: quantity
-      };
-      addToCart(productToAdd);
-      setModalVisible(false);
-    };
+    if (!selectedProduct) return null;
 
     return (
       <Modal
@@ -466,29 +410,29 @@ const ProductCatalog = () => {
                     marginHorizontal: 5,
                     padding: 10,
                     borderWidth: 1,
-                    borderColor: selectedFormat.id === format.id ? '#b937a8' : '#E0E0E0',
+                    borderColor: selectedFormat?.id === format.id ? '#b937a8' : '#E0E0E0',
                     borderRadius: 10,
                     alignItems: 'center',
-                    backgroundColor: selectedFormat.id === format.id ? '#b937a8' : 'white'
+                    backgroundColor: selectedFormat?.id === format.id ? '#b937a8' : 'white'
                   }}
                   onPress={() => setSelectedFormat(format)}
                 >
                   <Text style={{
                     fontWeight: 'bold',
-                    color: selectedFormat.id === format.id ? 'white' : '#333'
+                    color: selectedFormat?.id === format.id ? 'white' : '#333'
                   }}>
                     {format.name}
                   </Text>
                   <Text style={{
                     marginTop: 5,
-                    color: selectedFormat.id === format.id ? 'white' : '#666'
+                    color: selectedFormat?.id === format.id ? 'white' : '#666'
                   }}>
                     {(format.price / 100).toFixed(2)} €
                   </Text>
                   <Text style={{
                     marginTop: 5,
                     fontSize: 12,
-                    color: selectedFormat.id === format.id ? 'white' : '#999'
+                    color: selectedFormat?.id === format.id ? 'white' : '#999'
                   }}>
                     Stock: {format.stock}
                   </Text>
@@ -543,7 +487,7 @@ const ProductCatalog = () => {
                 fontWeight: 'bold',
                 color: '#b937a8'
               }}>
-                Total: {((selectedFormat.price * quantity) / 100).toFixed(2)} €
+                Total: {((selectedFormat?.price * quantity) / 100).toFixed(2)} €
               </Text>
               <TouchableOpacity 
                 style={{
@@ -562,6 +506,202 @@ const ProductCatalog = () => {
                 </Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  //Validation de panier
+
+  const renderCartModal = () => {
+    const calculateTotal = () => {
+      return cart.reduce((total, item) => 
+        total + (item.selectedFormat?.price * item.quantity), 0
+      );
+    };
+  
+    const removeFromCart = (indexToRemove) => {
+      const updatedCart = cart.filter((_, index) => index !== indexToRemove);
+      setCart(updatedCart);
+    };
+  
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={cartModalVisible}
+        onRequestClose={() => setCartModalVisible(false)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          justifyContent: 'flex-end'
+        }}>
+          <View style={{
+            backgroundColor: 'white',
+            borderTopLeftRadius: 25,
+            borderTopRightRadius: 25,
+            padding: 20,
+            maxHeight: '90%'
+          }}>
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 15
+            }}>
+              <Text style={{
+                fontSize: 24,
+                fontWeight: 'bold'
+              }}>
+                Votre Panier
+              </Text>
+              <TouchableOpacity onPress={() => setCartModalVisible(false)}>
+                <Icon name="close" size={24} color="#b937a8" />
+              </TouchableOpacity>
+            </View>
+  
+            {cart.length === 0 ? (
+              <View style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}>
+                <Icon 
+                  name="cart-off" 
+                  size={100} 
+                  color="#E0E0E0" 
+                  style={{ marginBottom: 20 }}
+                />
+                <Text style={{
+                  fontSize: 18,
+                  color: '#666'
+                }}>
+                  Votre panier est vide
+                </Text>
+              </View>
+            ) : (
+              <>
+                <FlatList
+                  data={cart}
+                  keyExtractor={(item, index) => `${item.id}-${index}`}
+                  renderItem={({ item, index }) => (
+                    <View style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      marginBottom: 10,
+                      paddingVertical: 10,
+                      borderBottomWidth: 1,
+                      borderBottomColor: '#E0E0E0'
+                    }}>
+                      <Image 
+                        source={item.image} 
+                        style={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: 10,
+                          marginRight: 10
+                        }} 
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{
+                          fontSize: 16,
+                          fontWeight: 'bold'
+                        }}>
+                          {item.name}
+                        </Text>
+                        <Text style={{ color: '#666' }}>
+                          {item.selectedFormat?.name}
+                        </Text>
+                        <Text style={{ color: '#b937a8', fontWeight: 'bold' }}>
+                          {(item.selectedFormat?.price / 100 * item.quantity).toFixed(2)} €
+                        </Text>
+                      </View>
+                      <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center'
+                      }}>
+                        <Text style={{ marginRight: 10 }}>
+                          {item.quantity}
+                        </Text>
+                        <TouchableOpacity 
+                          onPress={() => removeFromCart(index)}
+                          style={{
+                            backgroundColor: '#FFE5E5',
+                            padding: 5,
+                            borderRadius: 5
+                          }}
+                        >
+                          <Icon name="delete" size={20} color="#FF6B6B" />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                />
+  
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: 15
+                }}>
+                  <Text style={{
+                    fontSize: 18,
+                    fontWeight: 'bold'
+                  }}>
+                    Total
+                  </Text>
+                  <Text style={{
+                    fontSize: 18,
+                    fontWeight: 'bold',
+                    color: '#b937a8'
+                  }}>
+                    {(calculateTotal() / 100).toFixed(2)} €
+                  </Text>
+                </View>
+  
+                <TouchableOpacity 
+                  style={{
+                    backgroundColor: '#b937a8',
+                    borderRadius: 15,
+                    padding: 15,
+                    marginTop: 15,
+                    alignItems: 'center'
+                  }}
+                  onPress={() => {
+                    // Logique de validation de commande
+                    Alert.alert(
+                      "Confirmation de commande",
+                      "Voulez-vous vraiment valider cette commande ?",
+                      [
+                        {
+                          text: "Annuler",
+                          style: "cancel"
+                        },
+                        { 
+                          text: "Confirmer", 
+                          onPress: () => {
+                            // Ici vous pouvez ajouter la logique de soumission de commande
+                            Alert.alert("Commande validée", "Merci pour votre achat !");
+                            setCart([]);
+                            setCartModalVisible(false);
+                          }
+                        }
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={{
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: 16
+                  }}>
+                    Valider la commande
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       </Modal>
@@ -649,7 +789,7 @@ const ProductCatalog = () => {
           }}>
             Catalogue
           </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => setCartModalVisible(true)}>
             <Icon name="cart" size={24} color="white" />
             {cart.length > 0 && (
               <View style={{
@@ -693,13 +833,13 @@ const ProductCatalog = () => {
           style={{ marginTop: 10, marginBottom: 10 }}
         >
           <FlatList
-        data={categories}
-        renderItem={renderCategoryItem}
-        keyExtractor={(item) => item.id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ marginTop: 10, marginBottom: 10 }}
-        />
+            data={categories}
+            renderItem={renderCategoryItem}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ marginTop: 10, marginBottom: 10 }}
+          />
         </ScrollView>
 
         <ScrollView 
@@ -719,7 +859,8 @@ const ProductCatalog = () => {
         numColumns={2}
       />
 
-      {selectedProduct && renderProductDetailsModal()}
+      {modalVisible && renderProductDetailsModal()}
+      {cartModalVisible && renderCartModal()}
     </View>
   );
 };

@@ -53,7 +53,7 @@ const LoginScreen = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
       <LinearGradient
-        colors={['#1E4D92', '#2E79CC']}
+        colors={['#b937a8', '#e91e63']}
         style={styles.backgroundGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -148,7 +148,7 @@ const LoginScreen = ({ navigation }) => {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['#1E4D92', '#2E79CC']}
+                colors={['#b937a8', '#e91e63']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.gradientButton}
