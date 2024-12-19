@@ -40,9 +40,20 @@ const Dashboard = ({ navigation }) => {
       style={styles.headerGradient}
     >
       <View style={styles.headerContent}>
-        <View>
-          <Text style={styles.welcomeText}>Bonjour, Gérant</Text>
-          <Text style={styles.subHeaderText}>Tableau de bord de votre boutique</Text>
+        <View style={styles.headerLeftContent}>
+          <TouchableOpacity 
+            style={styles.profileIconButton}
+            onPress={() => navigation.navigate('ManagerProfileScreen')}
+          >
+            <Image 
+              source={{ uri: 'https://via.placeholder.com/50' }} 
+              style={styles.profileIcon} 
+            />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.welcomeText}>Bonjour, Abdoul</Text>
+            <Text style={styles.subHeaderText}>Tableau de bord de votre boutique</Text>
+          </View>
         </View>
         <TouchableOpacity style={styles.notificationButton}>
           <MaterialCommunityIcons name="bell" size={24} color="white" />
@@ -70,7 +81,7 @@ const Dashboard = ({ navigation }) => {
           colors: ['#007AFF', '#4FC3F7'] 
         },
         { 
-          title: 'Revenu Mensuel', 
+          title: 'Montant des achats', 
           value: `${dashboardData.monthlyRevenue.toLocaleString()} FCFA`, 
           icon: 'cash', 
           colors: ['#2ECC71', '#81C784'] 
@@ -95,8 +106,9 @@ const Dashboard = ({ navigation }) => {
   const renderTopProducts = () => (
     <View style={styles.sectionContainer}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Produits les plus vendus</Text>
-        <TouchableOpacity>
+        <Text style={styles.sectionTitle}>Produits les plus achetés</Text>
+        <TouchableOpacity 
+        onPress={() => navigation.navigate('TopProductsScreen')}>
           <Text style={styles.seeAllText}>Voir tout</Text>
         </TouchableOpacity>
       </View>
@@ -108,7 +120,7 @@ const Dashboard = ({ navigation }) => {
               style={styles.topProductImage} 
             />
             <Text style={styles.topProductName}>{product.name}</Text>
-            <Text style={styles.topProductSales}>{product.sales} ventes</Text>
+            <Text style={styles.topProductSales}>{product.sales} achats</Text>
           </View>
         ))}
       </View>
@@ -118,7 +130,7 @@ const Dashboard = ({ navigation }) => {
   const renderRevenueChart = () => (
     <View style={styles.sectionContainer}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Évolution du Revenu</Text>
+        <Text style={styles.sectionTitle}>Évolution des achats</Text>
         <TouchableOpacity>
           <Text style={styles.seeAllText}>Ce mois</Text>
         </TouchableOpacity>
@@ -357,6 +369,20 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontWeight: 'bold',
     color: '#333'
+  },
+  headerLeftContent: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  profileIconButton: {
+    marginRight: 15
+  },
+  profileIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: 'white'
   }
 });
 

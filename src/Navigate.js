@@ -12,6 +12,9 @@ import ProductDetailsScreen from './ProductDetail';
 import Dashboard from './Dashboard';
 import ProductCatalog from './ProductCatalog'
 import OrderHistory from './OrderHistory'
+import TopProductsScreen from './TopProductsScreen'
+import ManagerProfileScreen from './ManagerProfileScreen'
+import PriceComparator from './PriceComparator' 
 // import YourComponent1 from './Pages/Coordonne';
   
 const Stack = createStackNavigator();
@@ -29,6 +32,9 @@ export default function Navigue({ navigation }) {
         <Stack.Screen name="Dashboard" component={Dashboard} options={{ headerShown: false }}/>
         <Stack.Screen name="ProductCatalog" component={ProductCatalog} options={{ headerShown: false }}/>
         <Stack.Screen name="OrderHistory" component={OrderHistory} options={{ headerShown: false }}/>
+        <Stack.Screen name="TopProductsScreen" component={TopProductsScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="PriceComparator" component={PriceComparator} options={{ headerShown: false }}/>
+        <Stack.Screen name="ManagerProfileScreen" component={ManagerProfileScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="SupplierSignUpScreen" component={SupplierSignUpScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="SupplierProductsScreen" component={SupplierProductsScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="ProductDetailsScreen" component={ProductDetailsScreen} options={{ headerShown: false }}/>

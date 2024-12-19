@@ -50,7 +50,87 @@ const OrderHistory = () => {
           quantity: 1,
           price: 3000,
           format: 'Grand format',
+          image: require('../assets/chocolat.jpeg')
+        },
+        {
+          id: '2',
+          name: 'iPhone 12',
+          quantity: 1,
+          price: 1500,
+          format: 'Noir 64Go',
           image: require('../assets/iphone.jpg')
+        }
+      ]
+    },
+    {
+      id: '3',
+      date: '2024-02-20',
+      totalAmount: 3000,
+      status: 'En cours',
+      items: [
+        {
+          id: '1',
+          name: 'Bouteille de vin',
+          quantity: 1,
+          price: 3000,
+          format: 'Grand format',
+          image: require('../assets/iphone.jpg')
+        },
+        {
+          id: '2',
+          name: 'iPhone 12',
+          quantity: 1,
+          price: 1500,
+          format: 'Noir 64Go',
+          image: require('../assets/chocolat.jpeg')
+        }
+      ]
+    },
+    {
+      id: '4',
+      date: '2024-02-20',
+      totalAmount: 3000,
+      status: 'En cours',
+      items: [
+        {
+          id: '1',
+          name: 'Bouteille de vin',
+          quantity: 1,
+          price: 3000,
+          format: 'Grand format',
+          image: require('../assets/chocolat.jpeg')
+        },
+        {
+          id: '2',
+          name: 'iPhone 12',
+          quantity: 1,
+          price: 1500,
+          format: 'Noir 64Go',
+          image: require('../assets/iphone.jpg')
+        }
+      ]
+    },
+    {
+      id: '5',
+      date: '2024-02-20',
+      totalAmount: 3000,
+      status: 'En cours',
+      items: [
+        {
+          id: '1',
+          name: 'Bouteille de vin',
+          quantity: 1,
+          price: 3000,
+          format: 'Grand format',
+          image: require('../assets/iphone.jpg')
+        },
+        {
+          id: '2',
+          name: 'iPhone 12',
+          quantity: 1,
+          price: 1500,
+          format: 'Noir 64Go',
+          image: require('../assets/chocolat.jpeg')
         }
       ]
     }

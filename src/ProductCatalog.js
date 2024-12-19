@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Alert } from 'react-native';
 
-const ProductCatalog = () => {
+const ProductCatalog = ({ navigation }) => {
   const categories = [
     { 
       id: '0', 
@@ -187,7 +187,69 @@ const ProductCatalog = () => {
       ]
     },
     {
-      id: '2',
+      id: '4',
+      name: 'Lait demi-écrémé',
+      supplier: 'Lactel',
+      price: 1500,
+      stock: 150,
+      minStock: 50,
+      categoryId: '2',
+      image: require('../assets/brouette.jpg'),
+      lastOrder: '2024-03-15',
+      formats: [
+        { 
+          id: 'small', 
+          name: 'Petit (25cl)', 
+          price: 1000, 
+          stock: 200 
+        },
+        { 
+          id: 'medium', 
+          name: 'Moyen (50cl)', 
+          price: 1500, 
+          stock: 150 
+        },
+        { 
+          id: 'large', 
+          name: 'Grand (1L)', 
+          price: 2500, 
+          stock: 100 
+        }
+      ]
+    },
+    {
+      id: '5',
+      name: 'Lait demi-écrémé',
+      supplier: 'Lactel',
+      price: 1500,
+      stock: 150,
+      minStock: 50,
+      categoryId: '2',
+      image: require('../assets/ciment.jpeg'),
+      lastOrder: '2024-03-15',
+      formats: [
+        { 
+          id: 'small', 
+          name: 'Petit (25cl)', 
+          price: 1000, 
+          stock: 200 
+        },
+        { 
+          id: 'medium', 
+          name: 'Moyen (50cl)', 
+          price: 1500, 
+          stock: 150 
+        },
+        { 
+          id: 'large', 
+          name: 'Grand (1L)', 
+          price: 2500, 
+          stock: 100 
+        }
+      ]
+    },
+    {
+      id: '6',
       name: 'Lait demi-écrémé',
       supplier: 'Lactel',
       price: 1500,
@@ -474,7 +536,6 @@ const ProductCatalog = () => {
                 <Icon name="plus" size={20} color="#b937a8" />
               </TouchableOpacity>
             </View>
-
             <View style={{
               flexDirection: 'row',
               justifyContent: 'space-between',
@@ -767,7 +828,7 @@ const ProductCatalog = () => {
   return (
     <View style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
       <LinearGradient 
-        colors={['#b937a8', '#8e2e8b']} 
+        colors={['#b937a8', '#e91e63']} 
         style={{
           paddingTop: 50,
           paddingBottom: 20,
@@ -858,6 +919,24 @@ const ProductCatalog = () => {
         contentContainerStyle={{ padding: 10 }}
         numColumns={2}
       />
+        <TouchableOpacity
+            style={{
+              position: 'absolute',
+              bottom: 20,
+              right: 20,
+              backgroundColor: '#b937a8',
+              borderRadius: 30,
+              padding: 15,
+              elevation: 5,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
+            }}
+            onPress={() => navigation.navigate('PriceComparator')}
+          >
+        <Icon name="chart-line-variant" size={24} color="white" />
+      </TouchableOpacity>
 
       {modalVisible && renderProductDetailsModal()}
       {cartModalVisible && renderCartModal()}

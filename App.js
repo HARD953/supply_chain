@@ -6,6 +6,10 @@ import OrderHistoryScreen from './src/OrderHistoryScreen';
 import ProductCatalog from './src/ProductCatalog'
 import OrderHistory from './src/OrderHistory'
 import SupplierProductsScreen from './src/ListeProduit'
+import SurfaceCollectScreen from './src/collecte'
+import CollectionPage from './src/CollectionPage'
+import StrategicCollectionPage from './src/DetailedCollectionPage'
+import * as SplashScreen from 'expo-splash-screen'; // Importez la bibliothèque  
 
 export default function App() {
   return (

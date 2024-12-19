@@ -12,6 +12,7 @@
   "dependencies": {
     "@expo/vector-icons": "^14.0.4",
     "@react-native-async-storage/async-storage": "^2.1.0",
+    "@react-native-community/slider": "^4.5.5",
     "@react-native-masked-view/masked-view": "^0.3.2",
     "@react-native-picker/picker": "^2.9.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
@@ -25,6 +26,7 @@
     "expo-linear-gradient": "~14.0.1",
     "expo-location": "^18.0.1",
     "expo-secure-store": "~14.0.0",
+    "expo-splash-screen": "~0.29.18",
     "expo-status-bar": "~2.0.0",
     "react": "18.3.1",
     "react-dom": "^19.0.0",
