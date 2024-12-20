@@ -9,7 +9,9 @@ import SupplierProductsScreen from './src/ListeProduit'
 import SurfaceCollectScreen from './src/collecte'
 import CollectionPage from './src/CollectionPage'
 import StrategicCollectionPage from './src/DetailedCollectionPage'
-import * as SplashScreen from 'expo-splash-screen'; // Importez la bibliothèque  
+import * as SplashScreen from 'expo-splash-screen' // Importez la bibliothèque   
+import StoreLocations from './src/StoreLocations' 
+import ScheduleOrderScreen from './src/ScheduleOrderScreen'
 
 export default function App() {
   return (
@@ -19,7 +21,7 @@ export default function App() {
           style="light" 
           backgroundColor="#b937a8" 
         />
-        <Navigators />
+        <ScheduleOrderScreen />
       </SafeAreaView>
     </SafeAreaProvider>
   );

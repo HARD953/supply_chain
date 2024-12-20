@@ -12,6 +12,7 @@
   "dependencies": {
     "@expo/vector-icons": "^14.0.4",
     "@react-native-async-storage/async-storage": "^2.1.0",
+    "@react-native-community/datetimepicker": "^8.2.0",
     "@react-native-community/slider": "^4.5.5",
     "@react-native-masked-view/masked-view": "^0.3.2",
     "@react-native-picker/picker": "^2.9.0",
@@ -36,6 +37,7 @@
     "react-native-gesture-handler": "^2.21.2",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-localize": "^3.3.0",
+    "react-native-maps": "^1.20.1",
     "react-native-paper": "^5.12.5",
     "react-native-reanimated": "^3.16.2",
     "react-native-safe-area-context": "^4.14.1",

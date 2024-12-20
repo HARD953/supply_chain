@@ -55,7 +55,9 @@ const Dashboard = ({ navigation }) => {
             <Text style={styles.subHeaderText}>Tableau de bord de votre boutique</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.notificationButton}>
+        <TouchableOpacity 
+        onPress={() => navigation.navigate('NotificationsScreen')}
+        style={styles.notificationButton}>
           <MaterialCommunityIcons name="bell" size={24} color="white" />
           <View style={styles.notificationBadge}>
             <Text style={styles.notificationBadgeText}>3</Text>
