@@ -10,12 +10,14 @@ import PreOrderManagement from './PreOrderCommande';
 import SupplierSignUpScreen from './SupplierSignUpScreen';
 import ProductDetailsScreen from './ProductDetail';
 import Dashboard from './Dashboard';
-import ProductCatalog from './ProductCatalog'
-import OrderHistory from './OrderHistory'
-import TopProductsScreen from './TopProductsScreen'
-import ManagerProfileScreen from './ManagerProfileScreen'
-import PriceComparator from './PriceComparator'  
-import NotificationsScreen from './NotificationsScreen'
+import ProductCatalog from './ProductCatalog';
+import OrderHistory from './OrderHistory';
+import TopProductsScreen from './TopProductsScreen';
+import ManagerProfileScreen from './ManagerProfileScreen';
+import PriceComparator from './PriceComparator';
+import NotificationsScreen from './NotificationsScreen';
+import HomeDashboard from './HomeDashboard';
+import CommercialDataCollection from './CommercialDataCollection';
 // import YourComponent1 from './Pages/Coordonne';
   
 const Stack = createStackNavigator();
@@ -41,6 +43,8 @@ export default function Navigue({ navigation }) {
         <Stack.Screen name="SupplierProductsScreen" component={SupplierProductsScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="ProductDetailsScreen" component={ProductDetailsScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="PreOrderManagement" component={PreOrderManagement} options={{ headerShown: false }}/>
+        <Stack.Screen name="HomeDashboard" component={HomeDashboard} options={{ headerShown: false }}/>
+        <Stack.Screen name="CommercialDataCollection" component={CommercialDataCollection} options={{ headerShown: false }}/>
       </Stack.Navigator> 
   );
 }
