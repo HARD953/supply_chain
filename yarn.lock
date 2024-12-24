@@ -1591,7 +1591,7 @@
 
 "@react-navigation/native@^7.0.14":
   version "7.0.14"
-  resolved "https://registry.npmjs.org/@react-navigation/native/-/native-7.0.14.tgz"
+  resolved "https://registry.yarnpkg.com/@react-navigation/native/-/native-7.0.14.tgz#b3ee2879038dcf0523d26516af88d3adc549ce5e"
   integrity sha512-Gi6lLw4VOGSWAhmUdJOMauOKGK51/YA1CprjXm91sNfgERWvznqEMw8QmUQx9SEqYfi0LfZhbzpMst09SJ00lw==
   dependencies:
     "@react-navigation/core" "^7.3.1"

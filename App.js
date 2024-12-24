@@ -13,7 +13,8 @@ import * as SplashScreen from 'expo-splash-screen' // Importez la bibliothèque
 import StoreLocations from './src/StoreLocations' 
 import ScheduleOrderScreen from './src/ScheduleOrderScreen' 
 import CommercialDataCollection from './src/CommercialDataCollection'
-import HomeDashboard from './src/HomeDashboard'
+import HomeDashboard from './src/HomeDashboard' 
+import CommercialDataRecap from './src/CommercialDataRecap'
 
 export default function App() {
   return (
@@ -23,7 +24,7 @@ export default function App() {
           style="light" 
           backgroundColor="#b937a8" 
         />
-        <HomeDashboard />
+        <Navigators />
       </SafeAreaView>
     </SafeAreaProvider>
   );

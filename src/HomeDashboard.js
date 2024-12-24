@@ -62,13 +62,12 @@ const HomeDashboard = ({ navigation }) => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Tableau de Bord</Text>
         <TouchableOpacity 
-          style={styles.addButton}
           onPress={() => navigation.navigate('CommercialDataCollection')}
+          style={styles.addButton}
         >
           <MaterialIcons name="add" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Section Statistiques */}
         <View style={styles.statsGrid}>

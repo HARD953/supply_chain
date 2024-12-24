@@ -247,12 +247,16 @@ const CommercialDataCollection = ({navigation}) => {
           image={formData.boutique.image}
         />
 
-        <InputField
-          label="Nom de la boutique"
-          value={formData.boutique.nom}
-          onChangeText={(text) => updateFormField('boutique', 'nom', text)}
-          placeholder="Entrez le nom"
-        />
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Nom de la boutique</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.boutique.nom}
+            onChangeText={(text) => updateFormField('boutique', 'nom', text)}
+            placeholder="Entrez le nom"
+            placeholderTextColor="#999"
+          />
+        </View>
 
         <View style={styles.pickerContainer}>
           <Text style={styles.inputLabel}>Type de commerce</Text>
@@ -268,12 +272,16 @@ const CommercialDataCollection = ({navigation}) => {
           </Picker>
         </View>
 
-        <InputField
-          label="Adresse"
-          value={formData.boutique.adresse}
-          onChangeText={(text) => updateFormField('boutique', 'adresse', text)}
-          placeholder="Entrez l'adresse complète"
-        />
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Adresse</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.boutique.adresse}
+            onChangeText={(text) => updateFormField('boutique', 'adresse', text)}
+            placeholder="Entrez l'adresse complète"
+            placeholderTextColor="#999"
+          />
+        </View>
 
         <View style={styles.locationContainer}>
           <Text style={styles.inputLabel}>Coordonnées GPS</Text>
@@ -284,6 +292,7 @@ const CommercialDataCollection = ({navigation}) => {
                 value={formData.boutique.latitude}
                 editable={false}
                 placeholder="Latitude"
+                placeholderTextColor="#999"
               />
             </View>
             <View style={styles.locationField}>
@@ -292,6 +301,7 @@ const CommercialDataCollection = ({navigation}) => {
                 value={formData.boutique.longitude}
                 editable={false}
                 placeholder="Longitude"
+                placeholderTextColor="#999"
               />
             </View>
             <TouchableOpacity 
@@ -307,23 +317,27 @@ const CommercialDataCollection = ({navigation}) => {
 
         <Text style={styles.subSectionTitle}>Informations du propriétaire</Text>
         
-        <InputField
-          label="Nom du propriétaire"
-          value={formData.boutique.proprietaire.nom}
-          onChangeText={(text) => {
-            setFormData(prev => ({
-              ...prev,
-              boutique: {
-                ...prev.boutique,
-                proprietaire: {
-                  ...prev.boutique.proprietaire,
-                  nom: text
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Nom du propriétaire</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.boutique.proprietaire.nom}
+            onChangeText={(text) => {
+              setFormData(prev => ({
+                ...prev,
+                boutique: {
+                  ...prev.boutique,
+                  proprietaire: {
+                    ...prev.boutique.proprietaire,
+                    nom: text
+                  }
                 }
-              }
-            }));
-          }}
-          placeholder="Entrez le nom du propriétaire"
-        />
+              }));
+            }}
+            placeholder="Entrez le nom du propriétaire"
+            placeholderTextColor="#999"
+          />
+        </View>
 
         <View style={styles.pickerContainer}>
           <Text style={styles.inputLabel}>Genre</Text>
@@ -350,43 +364,51 @@ const CommercialDataCollection = ({navigation}) => {
           </Picker>
         </View>
 
-        <InputField
-          label="Téléphone"
-          value={formData.boutique.proprietaire.telephone}
-          onChangeText={(text) => {
-            setFormData(prev => ({
-              ...prev,
-              boutique: {
-                ...prev.boutique,
-                proprietaire: {
-                  ...prev.boutique.proprietaire,
-                  telephone: text
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Téléphone</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.boutique.proprietaire.telephone}
+            onChangeText={(text) => {
+              setFormData(prev => ({
+                ...prev,
+                boutique: {
+                  ...prev.boutique,
+                  proprietaire: {
+                    ...prev.boutique.proprietaire,
+                    telephone: text
+                  }
                 }
-              }
-            }));
-          }}
-          placeholder="Numéro de téléphone"
-          keyboardType="phone-pad"
-        />
+              }));
+            }}
+            placeholder="Numéro de téléphone"
+            keyboardType="phone-pad"
+            placeholderTextColor="#999"
+          />
+        </View>
 
-        <InputField
-          label="Email"
-          value={formData.boutique.proprietaire.email}
-          onChangeText={(text) => {
-            setFormData(prev => ({
-              ...prev,
-              boutique: {
-                ...prev.boutique,
-                proprietaire: {
-                  ...prev.boutique.proprietaire,
-                  email: text
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Email</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.boutique.proprietaire.email}
+            onChangeText={(text) => {
+              setFormData(prev => ({
+                ...prev,
+                boutique: {
+                  ...prev.boutique,
+                  proprietaire: {
+                    ...prev.boutique.proprietaire,
+                    email: text
+                  }
                 }
-              }
-            }));
-          }}
-          placeholder="Adresse email"
-          keyboardType="email-address"
-        />
+              }));
+            }}
+            placeholder="Adresse email"
+            keyboardType="email-address"
+            placeholderTextColor="#999"
+          />
+        </View>
 
         <TouchableOpacity 
           style={styles.submitButton}
@@ -413,12 +435,16 @@ const CommercialDataCollection = ({navigation}) => {
           image={formData.produit.image}
         />
 
-        <InputField
-          label="Nom du produit"
-          value={formData.produit.nom}
-          onChangeText={(text) => updateFormField('produit', 'nom', text)}
-          placeholder="Entrez le nom du produit"
-        />
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Nom du produit</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.produit.nom}
+            onChangeText={(text) => updateFormField('produit', 'nom', text)}
+            placeholder="Entrez le nom du produit"
+            placeholderTextColor="#999"
+          />
+        </View>
 
         <View style={styles.pickerContainer}>
           <Text style={styles.inputLabel}>Catégorie</Text>
@@ -434,21 +460,29 @@ const CommercialDataCollection = ({navigation}) => {
           </Picker>
         </View>
 
-        <InputField
-          label="Prix actuel"
-          value={formData.produit.prix}
-          onChangeText={(text) => updateFormField('produit', 'prix', text)}
-          placeholder="Prix du produit"
-          keyboardType="numeric"
-        />
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Prix actuel</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.produit.prix}
+            onChangeText={(text) => updateFormField('produit', 'prix', text)}
+            placeholder="Prix du produit"
+            keyboardType="numeric"
+            placeholderTextColor="#999"
+          />
+        </View>
 
-        <InputField
-          label="Quantité en stock"
-          value={formData.produit.quantiteStock}
-          onChangeText={(text) => updateFormField('produit', 'quantiteStock', text)}
-          placeholder="Quantité disponible"
-          keyboardType="numeric"
-        />
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Quantité en stock</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.produit.quantiteStock}
+            onChangeText={(text) => updateFormField('produit', 'quantiteStock', text)}
+            placeholder="Quantité disponible"
+            keyboardType="numeric"
+            placeholderTextColor="#999"
+          />
+        </View>
 
         <TouchableOpacity 
           style={styles.submitButton}
@@ -475,12 +509,16 @@ const CommercialDataCollection = ({navigation}) => {
           image={formData.fournisseur.image}
         />
 
-        <InputField
-          label="Nom du fournisseur"
-          value={formData.fournisseur.nom}
-          onChangeText={(text) => updateFormField('fournisseur', 'nom', text)}
-          placeholder="Entrez le nom du fournisseur"
-        />
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Nom du fournisseur</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.fournisseur.nom}
+            onChangeText={(text) => updateFormField('fournisseur', 'nom', text)}
+            placeholder="Entrez le nom du fournisseur"
+            placeholderTextColor="#999"
+          />
+        </View>
 
         <View style={styles.pickerContainer}>
           <Text style={styles.inputLabel}>Type de fournisseur</Text>
@@ -496,26 +534,27 @@ const CommercialDataCollection = ({navigation}) => {
           </Picker>
         </View>
 
-        <InputField
-          label="Délai de livraison moyen (jours)"
-          value={formData.fournisseur.delaiLivraison}
-          onChangeText={(text) => updateFormField('fournisseur', 'delaiLivraison', text)}
-          placeholder="Nombre de jours"
-          keyboardType="numeric"
-        />
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Délai de livraison moyen (jours)</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.fournisseur.delaiLivraison}
+            onChangeText={(text) => updateFormField('fournisseur', 'delaiLivraison', text)}
+            placeholder="Nombre de jours"
+            keyboardType="numeric"
+            placeholderTextColor="#999"
+          />
+        </View>
 
         <TouchableOpacity 
           style={styles.submitButton}
-          onPress={() => {
-            Alert.alert('Succès', 'Informations du fournisseur enregistrées');
-          }}
+          onPress={() => navigation.navigate("Dashboard")}
         >
           <Text style={styles.submitButtonText}>Enregistrer le fournisseur</Text>
         </TouchableOpacity>
       </LinearGradient>
     </View>
   );
-
   return (
     <KeyboardAvoidingView 
       style={styles.container}

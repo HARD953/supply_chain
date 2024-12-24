@@ -30,7 +30,7 @@ const CustomHeaderTitle = ({ title }) => (
 
 export default function Navigue({ navigation }) {
   return (
-      <Stack.Navigator initialRouteName="LoginScreen">
+      <Stack.Navigator initialRouteName="HomeDashboard">
         <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="Dashboard" component={Dashboard} options={{ headerShown: false }}/>
         <Stack.Screen name="ProductCatalog" component={ProductCatalog} options={{ headerShown: false }}/>
@@ -43,8 +43,8 @@ export default function Navigue({ navigation }) {
         <Stack.Screen name="SupplierProductsScreen" component={SupplierProductsScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="ProductDetailsScreen" component={ProductDetailsScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="PreOrderManagement" component={PreOrderManagement} options={{ headerShown: false }}/>
-        <Stack.Screen name="HomeDashboard" component={HomeDashboard} options={{ headerShown: false }}/>
         <Stack.Screen name="CommercialDataCollection" component={CommercialDataCollection} options={{ headerShown: false }}/>
+        <Stack.Screen name="HomeDashboard" component={HomeDashboard} options={{ headerShown: false }}/>
       </Stack.Navigator> 
   );
 }
