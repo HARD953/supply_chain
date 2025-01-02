@@ -36,7 +36,7 @@ const Dashboard = ({ navigation }) => {
 
   const renderHeader = () => (
     <LinearGradient
-      colors={['#b937a8', '#e91e63']}
+      colors={['#1E40AF', '#3B82F6']}
       style={styles.headerGradient}
     >
       <View style={styles.headerContent}>
@@ -74,7 +74,7 @@ const Dashboard = ({ navigation }) => {
           title: 'Total Commandes', 
           value: dashboardData.totalOrders, 
           icon: 'cart', 
-          colors: ['#b937a8', '#e91e63'] 
+          colors: ['#1E40AF', '#3B82F6'] 
         },
         { 
           title: 'Commandes en Attente', 
@@ -155,7 +155,7 @@ const Dashboard = ({ navigation }) => {
             propsForDots: {
               r: "6",
               strokeWidth: "2",
-              stroke: "#b937a8"
+              stroke: "#1E40AF"
             }
           }}
           bezier
@@ -177,7 +177,7 @@ const Dashboard = ({ navigation }) => {
           onPress={() => navigation.navigate('ProductCatalog')}
         >
           <View style={styles.quickActionButtonContent}>
-            <MaterialCommunityIcons name="plus-circle" size={24} color="#b937a8" />
+            <MaterialCommunityIcons name="plus-circle" size={24} color="#1E40AF" />
             <Text style={styles.quickActionButtonText}>Nouvelle Commande</Text>
           </View>
         </TouchableOpacity>
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   notificationBadgeText: {
-    color: '#b937a8',
+    color: '#1E40AF',
     fontSize: 12,
     fontWeight: 'bold'
   },
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     width: '30%',
     borderRadius: 15,
     elevation: 5,
-    shadowColor: '#b937a8',
+    shadowColor: '#1E40AF',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#b937a8'
+    color: '#1E40AF'
   },
   seeAllText: {
     color: '#007AFF',

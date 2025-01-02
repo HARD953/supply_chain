@@ -132,7 +132,7 @@ const TopProductsScreen = ({ navigation }) => {
 
   const renderHeader = () => (
     <LinearGradient
-      colors={['#b937a8', '#e91e63']}
+      colors={['#1E40AF', '#3B82F6']}
       style={styles.headerGradient}
     >
       <View style={styles.headerContent}>
@@ -169,7 +169,7 @@ const TopProductsScreen = ({ navigation }) => {
           <MaterialCommunityIcons
             name={showFilters ? "filter-off" : "filter"}
             size={24}
-            color="#b937a8"
+            color="#3B82F6"
           />
         </TouchableOpacity>
       </View>
@@ -295,7 +295,7 @@ const TopProductsScreen = ({ navigation }) => {
             style={styles.actionButton}
             onPress={() => {/* Action pour modifier le produit */}}
           >
-            <MaterialCommunityIcons name="pencil" size={20} color="#b937a8" />
+            <MaterialCommunityIcons name="pencil" size={20} color="#3B82F6" />
           </TouchableOpacity>
         </View>
       </View>
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
     marginRight: 10
   },
   filterChipActive: {
-    backgroundColor: '#b937a8'
+    backgroundColor: '#3B82F6'
   },
   filterChipText: {
     color: '#666'
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#b937a8'
+    color: '#3B82F6'
   },
   scrollContainer: {
     flex: 1
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     padding: 15,
     elevation: 3,
-    shadowColor: '#b937a8',
+    shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#b937a8'
+    color: '#3B82F6'
   },
   salesBadge: {
     backgroundColor: '#e91e63',

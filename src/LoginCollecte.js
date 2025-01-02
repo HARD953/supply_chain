@@ -21,7 +21,7 @@ import * as Animatable from 'react-native-animatable';
 
 const { width, height } = Dimensions.get('window');
 
-const LoginScreen = ({ navigation }) => {
+const LoginCollecte = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -71,12 +71,12 @@ const LoginScreen = ({ navigation }) => {
         >
           <View style={styles.logoContainer}>
             <Image 
-              source={require('../assets/image.png')} 
+              source={require('../assets/collecte.png')} 
               style={styles.logo} 
               resizeMode="contain"
             />
-            <Text style={styles.brandName}>Supply Chain Portal</Text>
-            <Text style={styles.subtitle}>Gérez vos commandes efficacement</Text>
+            <Text style={styles.brandName}>Supply Chain Collecte</Text>
+            <Text style={styles.subtitle}>Gérez la collecte des informations sur une surface</Text>
           </View>
           <Animatable.View 
             animation="slideInUp"
@@ -143,7 +143,7 @@ const LoginScreen = ({ navigation }) => {
 
               <TouchableOpacity 
                 style={styles.loginButton}
-                onPress={()=>{navigation.navigate('Dashboard')}}
+                onPress={()=>{navigation.navigate('HomeDashboard')}}
                 activeOpacity={0.8}
               >
                 <LinearGradient
@@ -341,4 +341,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default LoginScreen;
+export default LoginCollecte;

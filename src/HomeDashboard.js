@@ -12,7 +12,7 @@ import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LineChart, PieChart } from 'react-native-chart-kit';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const { width,height } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const HomeDashboard = ({ navigation }) => {
   // Données de démonstration
@@ -35,7 +35,7 @@ const HomeDashboard = ({ navigation }) => {
     datasets: [
       {
         data: [15, 22, 18, 25, 20, 12, 23],
-        color: (opacity = 1) => `rgba(185, 55, 168, ${opacity})`
+        color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`  // Bleu pour le graphique
       }
     ]
   };
@@ -59,7 +59,18 @@ const HomeDashboard = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#1E3A8A', '#3B82F6']}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialIcons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Tableau de Bord</Text>
         <TouchableOpacity 
           onPress={() => navigation.navigate('CommercialDataCollection')}
@@ -67,7 +78,7 @@ const HomeDashboard = ({ navigation }) => {
         >
           <MaterialIcons name="add" size={24} color="#fff" />
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Section Statistiques */}
         <View style={styles.statsGrid}>
@@ -91,7 +102,7 @@ const HomeDashboard = ({ navigation }) => {
               backgroundGradientFrom: "#fff",
               backgroundGradientTo: "#fff",
               decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(185, 55, 168, ${opacity})`,
+              color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
               style: {
                 borderRadius: 16
               }
@@ -117,8 +128,10 @@ const HomeDashboard = ({ navigation }) => {
               <View style={styles.collecteStatus}>
                 <Text style={[
                   styles.statusText,
-                  { color: collecte.statut === 'complété' ? '#4CAF50' : 
-                           collecte.statut === 'en cours' ? '#FF9800' : '#F44336' }
+                  { 
+                    color: collecte.statut === 'complété' ? '#2563EB' : 
+                           collecte.statut === 'en cours' ? '#60A5FA' : '#94A3B8'
+                  }
                 ]}>
                   {collecte.statut.toUpperCase()}
                 </Text>
@@ -135,15 +148,17 @@ const HomeDashboard = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8fafc',
   },
   header: {
-    backgroundColor: '#b937a8',
     padding: 16,
     paddingTop: Platform.OS === 'ios' ? 50 : 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  backButton: {
+    padding: 8,
   },
   headerTitle: {
     color: '#fff',
@@ -171,7 +186,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: '#1E3A8A',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -199,7 +214,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: '#1E3A8A',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -208,7 +223,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 16,
-    color: '#333',
+    color: '#1E3A8A',
   },
   chart: {
     marginVertical: 8,
@@ -224,14 +239,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 16,
-    color: '#333',
+    color: '#1E3A8A',
   },
   collecteItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#f1f5f9',
   },
   collecteInfo: {
     flex: 1,
@@ -239,12 +254,12 @@ const styles = StyleSheet.create({
   collecteName: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333',
+    color: '#1E3A8A',
     marginBottom: 4,
   },
   collecteType: {
     fontSize: 14,
-    color: '#666',
+    color: '#64748b',
   },
   collecteStatus: {
     alignItems: 'flex-end',
@@ -256,7 +271,7 @@ const styles = StyleSheet.create({
   },
   collecteDate: {
     fontSize: 12,
-    color: '#999',
+    color: '#94a3b8',
   },
 });
 

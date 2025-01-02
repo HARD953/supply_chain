@@ -384,7 +384,7 @@ const ProductCatalog = ({ navigation }) => {
         paddingVertical: 10,
         borderRadius: 20,
         marginRight: 10,
-        backgroundColor: selectedSupplier === supplier ? '#b937a8' : '#F5F5F5'
+        backgroundColor: selectedSupplier === supplier ? '#2563EB' : '#F5F5F5'
       }}
       onPress={() => setSelectedSupplier(supplier)}
     >
@@ -430,7 +430,7 @@ const ProductCatalog = ({ navigation }) => {
               }}
               onPress={() => setModalVisible(false)}
             >
-              <Icon name="close" size={24} color="#b937a8" />
+              <Icon name="close" size={24} color="#2563EB" />
             </TouchableOpacity>
             
             <Image 
@@ -472,10 +472,10 @@ const ProductCatalog = ({ navigation }) => {
                     marginHorizontal: 5,
                     padding: 10,
                     borderWidth: 1,
-                    borderColor: selectedFormat?.id === format.id ? '#b937a8' : '#E0E0E0',
+                    borderColor: selectedFormat?.id === format.id ? '#2563EB' : '#E0E0E0',
                     borderRadius: 10,
                     alignItems: 'center',
-                    backgroundColor: selectedFormat?.id === format.id ? '#b937a8' : 'white'
+                    backgroundColor: selectedFormat?.id === format.id ? '#2563EB' : 'white'
                   }}
                   onPress={() => setSelectedFormat(format)}
                 >
@@ -516,7 +516,7 @@ const ProductCatalog = ({ navigation }) => {
                 }}
                 onPress={() => setQuantity(Math.max(1, quantity - 1))}
               >
-                <Icon name="minus" size={20} color="#b937a8" />
+                <Icon name="minus" size={20} color="#2563EB" />
               </TouchableOpacity>
               <Text style={{
                 marginHorizontal: 20,
@@ -533,7 +533,7 @@ const ProductCatalog = ({ navigation }) => {
                 }}
                 onPress={() => setQuantity(quantity + 1)}
               >
-                <Icon name="plus" size={20} color="#b937a8" />
+                <Icon name="plus" size={20} color="#2563EB" />
               </TouchableOpacity>
             </View>
             <View style={{
@@ -546,13 +546,13 @@ const ProductCatalog = ({ navigation }) => {
               <Text style={{
                 fontSize: 18,
                 fontWeight: 'bold',
-                color: '#b937a8'
+                color: '#2563EB'
               }}>
                 Total: {((selectedFormat?.price * quantity) / 100).toFixed(2)} €
               </Text>
               <TouchableOpacity 
                 style={{
-                  backgroundColor: '#b937a8',
+                  backgroundColor: '#2563EB',
                   borderRadius: 15,
                   padding: 15,
                   paddingHorizontal: 30
@@ -619,7 +619,7 @@ const ProductCatalog = ({ navigation }) => {
                 Votre Panier
               </Text>
               <TouchableOpacity onPress={() => setCartModalVisible(false)}>
-                <Icon name="close" size={24} color="#b937a8" />
+                <Icon name="close" size={24} color="#2563EB" />
               </TouchableOpacity>
             </View>
   
@@ -675,7 +675,7 @@ const ProductCatalog = ({ navigation }) => {
                         <Text style={{ color: '#666' }}>
                           {item.selectedFormat?.name}
                         </Text>
-                        <Text style={{ color: '#b937a8', fontWeight: 'bold' }}>
+                        <Text style={{ color: '#2563EB', fontWeight: 'bold' }}>
                           {(item.selectedFormat?.price / 100 * item.quantity).toFixed(2)} €
                         </Text>
                       </View>
@@ -716,7 +716,7 @@ const ProductCatalog = ({ navigation }) => {
                   <Text style={{
                     fontSize: 18,
                     fontWeight: 'bold',
-                    color: '#b937a8'
+                    color: '#2563EB'
                   }}>
                     {(calculateTotal() / 100).toFixed(2)} €
                   </Text>
@@ -724,7 +724,7 @@ const ProductCatalog = ({ navigation }) => {
   
                 <TouchableOpacity 
                   style={{
-                    backgroundColor: '#b937a8',
+                    backgroundColor: '#2563EB',
                     borderRadius: 15,
                     padding: 15,
                     marginTop: 15,
@@ -813,12 +813,12 @@ const ProductCatalog = ({ navigation }) => {
           <Text style={{
             fontSize: 14,
             fontWeight: 'bold',
-            color: '#b937a8'
+            color: '#2563EB'
           }}>
             {(item.price / 100).toFixed(2)} €
           </Text>
           <TouchableOpacity onPress={() => addToCart(item)}>
-            <Icon name="cart-plus" size={24} color="#b937a8" />
+            <Icon name="cart-plus" size={24} color="#2563EB" />
           </TouchableOpacity>
         </View>
       </View>
@@ -828,7 +828,7 @@ const ProductCatalog = ({ navigation }) => {
   return (
     <View style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
       <LinearGradient 
-        colors={['#b937a8', '#e91e63']} 
+        colors={['#1E40AF', '#3B82F6']}
         style={{
           paddingTop: 50,
           paddingBottom: 20,
@@ -865,7 +865,7 @@ const ProductCatalog = ({ navigation }) => {
                 alignItems: 'center'
               }}>
                 <Text style={{
-                  color: '#b937a8',
+                  color: '#2563EB',
                   fontSize: 12,
                   fontWeight: 'bold'
                 }}>
@@ -924,7 +924,7 @@ const ProductCatalog = ({ navigation }) => {
               position: 'absolute',
               bottom: 20,
               right: 20,
-              backgroundColor: '#b937a8',
+              backgroundColor: '#2563EB',
               borderRadius: 30,
               padding: 15,
               elevation: 5,
@@ -985,7 +985,7 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   notificationBadgeText: {
-    color: '#b937a8',
+    color: '#2563EB',
     fontSize: 12,
     fontWeight: 'bold'
   },
@@ -1025,7 +1025,7 @@ const styles = StyleSheet.create({
   productPrice: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#b937a8'
+    color: '#2563EB'
   },
   modalContainer: {
     flex: 1,
@@ -1073,13 +1073,13 @@ const styles = StyleSheet.create({
   modalProductPrice: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#b937a8'
+    color: '#2563EB'
   },
   modalProductStock: {
     color: '#666'
   },
   addToCartButton: {
-    backgroundColor: '#b937a8',
+    backgroundColor: '#2563EB',
     borderRadius: 15,
     padding: 15,
     width: '100%',
@@ -1156,7 +1156,7 @@ const styles = StyleSheet.create({
   productPrice: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#b937a8'
+    color: '#2563EB'
   },
 
   formatSelectionContainer: {
@@ -1175,8 +1175,8 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   selectedFormatButton: {
-    backgroundColor: '#b937a8',
-    borderColor: '#b937a8'
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB'
   },
   formatOptionText: {
     fontWeight: 'bold',
@@ -1220,7 +1220,7 @@ const styles = StyleSheet.create({
   totalText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#b937a8'
+    color: '#2563EB'
   }
 });
 

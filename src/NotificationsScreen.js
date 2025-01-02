@@ -76,7 +76,7 @@ const NotificationsScreen = ({ navigation }) => {
 
   const renderHeader = () => (
     <LinearGradient
-      colors={['#b937a8', '#e91e63']}
+      colors={['#1E40AF', '#3B82F6']}
       style={styles.headerGradient}
     >
       <View style={styles.headerContent}>
@@ -105,7 +105,7 @@ const NotificationsScreen = ({ navigation }) => {
           <MaterialCommunityIcons 
             name={getNotificationIcon(notification.type)} 
             size={24} 
-            color="#b937a8" 
+            color="#3B82F6" 
           />
         </View>
         <View style={styles.notificationTextContent}>
@@ -136,7 +136,7 @@ const NotificationsScreen = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#b937a8']}
+            colors={['#3B82F6']}
           />
         }
       >
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#b937a8',
+    backgroundColor: '#3B82F6',
     marginLeft: 10
   },
   emptyState: {

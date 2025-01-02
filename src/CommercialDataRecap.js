@@ -80,6 +80,11 @@ const CommercialDataRecap = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+        <LinearGradient
+        colors={['#1E3A8A', '#3B82F6']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -89,7 +94,7 @@ const CommercialDataRecap = ({ route, navigation }) => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Récapitulatif</Text>
       </View>
-
+      </LinearGradient>
       <ScrollView style={styles.content}>
         <DataCard title="Informations de la boutique">
           <ImagePreview uri={data.boutique.image} title="Photo de la boutique" />
@@ -149,7 +154,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#b937a8',
     padding: 16,
     paddingTop: Platform.OS === 'ios' ? 50 : 16,
     flexDirection: 'row',
@@ -158,6 +162,7 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
     marginRight: 16,
+    
   },
   headerTitle: {
     color: '#fff',
@@ -242,7 +247,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   exportButton: {
-    backgroundColor: '#b937a8',
+    backgroundColor: '#1E3A8A',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

@@ -311,7 +311,7 @@ const CommercialDataCollection = ({navigation}) => {
               <MaterialIcons name="my-location" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
-          {loading && <ActivityIndicator style={styles.loader} color="#b937a8" />}
+          {loading && <ActivityIndicator style={styles.loader} color="#1E3A8A" />}
           {locationError && <Text style={styles.errorText}>{locationError}</Text>}
         </View>
 
@@ -412,9 +412,7 @@ const CommercialDataCollection = ({navigation}) => {
 
         <TouchableOpacity 
           style={styles.submitButton}
-          onPress={() => {
-            Alert.alert('Succès', 'Informations de la boutique enregistrées');
-          }}
+          onPress={() => navigation.navigate("CommercialDataRecap")}
         >
           <Text style={styles.submitButtonText}>Enregistrer la boutique</Text>
         </TouchableOpacity>
@@ -486,9 +484,7 @@ const CommercialDataCollection = ({navigation}) => {
 
         <TouchableOpacity 
           style={styles.submitButton}
-          onPress={() => {
-            Alert.alert('Succès', 'Informations du produit enregistrées');
-          }}
+          onPress={() => navigation.navigate("CommercialDataRecap")}
         >
           <Text style={styles.submitButtonText}>Enregistrer le produit</Text>
         </TouchableOpacity>
@@ -548,8 +544,9 @@ const CommercialDataCollection = ({navigation}) => {
 
         <TouchableOpacity 
           style={styles.submitButton}
-          onPress={() => navigation.navigate("Dashboard")}
+          onPress={() => navigation.navigate("CommercialDataRecap")}
         >
+          
           <Text style={styles.submitButtonText}>Enregistrer le fournisseur</Text>
         </TouchableOpacity>
       </LinearGradient>
@@ -561,10 +558,23 @@ const CommercialDataCollection = ({navigation}) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Collecte de données</Text>
+      <LinearGradient
+        colors={['#1E3A8A', '#3B82F6']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        
+        <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialIcons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Collecte des données</Text>
       </View>
-
+      
+      </LinearGradient>
       <View style={styles.tabs}>
         {['boutique', 'produit', 'fournisseur'].map((tab) => (
           <TouchableOpacity 
@@ -599,15 +609,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#b937a8',
     padding: 16,
     paddingTop: Platform.OS === 'ios' ? 50 : 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 16,
+    
   },
   headerTitle: {
     color: '#fff',
     fontSize: 20,
     fontWeight: 'bold',
-    textAlign: 'center',
+    flex: 1,
   },
   tabs: {
     flexDirection: 'row',
@@ -626,7 +642,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: '#b937a8',
+    borderBottomColor: '#1E3A8A',
   },
   tabText: {
     color: '#666',
@@ -634,7 +650,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeTabText: {
-    color: '#b937a8',
+    color: '#1E3A8A',
     fontWeight: 'bold',
   },
   formContainer: {
@@ -712,7 +728,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   locationButton: {
-    backgroundColor: '#b937a8',
+    backgroundColor: '#1E3A8A',
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
@@ -756,7 +772,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   submitButton: {
-    backgroundColor: '#b937a8',
+    backgroundColor: '#1E3A8A',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',

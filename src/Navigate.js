@@ -17,8 +17,10 @@ import ManagerProfileScreen from './ManagerProfileScreen';
 import PriceComparator from './PriceComparator';
 import NotificationsScreen from './NotificationsScreen';
 import HomeDashboard from './HomeDashboard';
-import CommercialDataCollection from './CommercialDataCollection';
-// import YourComponent1 from './Pages/Coordonne';
+import CommercialDataCollection from './CommercialDataCollection';  
+import LoginCollecte from './LoginCollecte';
+import CommercialDataRecap from './CommercialDataRecap';
+// import YourComponent1 from './Pages/Coordonne'; 
   
 const Stack = createStackNavigator();
 
@@ -30,8 +32,9 @@ const CustomHeaderTitle = ({ title }) => (
 
 export default function Navigue({ navigation }) {
   return (
-      <Stack.Navigator initialRouteName="HomeDashboard">
+      <Stack.Navigator initialRouteName="LoginCollecte">
         <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="LoginCollecte" component={LoginCollecte} options={{ headerShown: false }}/>
         <Stack.Screen name="Dashboard" component={Dashboard} options={{ headerShown: false }}/>
         <Stack.Screen name="ProductCatalog" component={ProductCatalog} options={{ headerShown: false }}/>
         <Stack.Screen name="OrderHistory" component={OrderHistory} options={{ headerShown: false }}/>
@@ -44,6 +47,7 @@ export default function Navigue({ navigation }) {
         <Stack.Screen name="ProductDetailsScreen" component={ProductDetailsScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="PreOrderManagement" component={PreOrderManagement} options={{ headerShown: false }}/>
         <Stack.Screen name="CommercialDataCollection" component={CommercialDataCollection} options={{ headerShown: false }}/>
+        <Stack.Screen name="CommercialDataRecap" component={CommercialDataRecap} options={{ headerShown: false }}/>
         <Stack.Screen name="HomeDashboard" component={HomeDashboard} options={{ headerShown: false }}/>
       </Stack.Navigator> 
   );

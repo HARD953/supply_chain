@@ -13,8 +13,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const ManagerProfileScreen = ({ navigation }) => {
   const [managerInfo, setManagerInfo] = useState({
-    name: 'Jean Dupont',
-    email: 'jean.dupont@example.com',
+    name: 'OUEDRAOGO ISSA',
+    email: 'issa@gmail.com',
     phone: '+225 07 00 00 00',
     boutiqueName: 'Épicerie du Centre',
     address: 'Rue des Commercants, Abidjan, Côte d\'Ivoire',
@@ -25,7 +25,7 @@ const ManagerProfileScreen = ({ navigation }) => {
 
   const renderHeader = () => (
     <LinearGradient
-      colors={['#b937a8', '#e91e63']}
+      colors={['#1E40AF', '#3B82F6']}
       style={styles.headerGradient}
     >
       <View style={styles.headerContent}>
@@ -93,7 +93,7 @@ const ManagerProfileScreen = ({ navigation }) => {
               <MaterialCommunityIcons 
                 name={item.icon} 
                 size={24} 
-                color="#b937a8" 
+                color="#3B82F6" 
               />
             </View>
             <View style={styles.infoTextContainer}>
@@ -112,7 +112,7 @@ const ManagerProfileScreen = ({ navigation }) => {
         style={styles.actionButton}
         onPress={() => {/* Modifier le profil */}}
       >
-        <MaterialCommunityIcons name="account-edit" size={24} color="#b937a8" />
+        <MaterialCommunityIcons name="account-edit" size={24} color="#3B82F6" />
         <Text style={styles.actionButtonText}>Modifier le Profil</Text>
       </TouchableOpacity>
       <TouchableOpacity 
@@ -179,13 +179,13 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 75,
     borderWidth: 4,
-    borderColor: '#b937a8'
+    borderColor: '#3B82F6'
   },
   editProfileButton: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#b937a8',
+    backgroundColor: '#3B82F6',
     borderRadius: 20,
     padding: 8
   },

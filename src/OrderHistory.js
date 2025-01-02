@@ -153,7 +153,7 @@ const OrderHistory = () => {
         paddingVertical: 10,
         borderRadius: 20,
         marginRight: 10,
-        backgroundColor: selectedStatus === status ? '#b937a8' : '#F5F5F5'
+        backgroundColor: selectedStatus === status ? '#3B82F6' : '#F5F5F5'
       }}
       onPress={() => setSelectedStatus(status)}
     >
@@ -184,7 +184,7 @@ const OrderHistory = () => {
               style={styles.closeButton}
               onPress={() => setOrderDetailsModal(false)}
             >
-              <Icon name="close" size={24} color="#b937a8" />
+              <Icon name="close" size={24} color="#3B82F6" />
             </TouchableOpacity>
             
             <Text style={styles.modalOrderTitle}>
@@ -197,14 +197,14 @@ const OrderHistory = () => {
             
             <View style={styles.modalOrderInfoContainer}>
               <View style={styles.modalOrderInfoItem}>
-                <Icon name="calendar" size={20} color="#b937a8" />
+                <Icon name="calendar" size={20} color="#3B82F6" />
                 <Text style={styles.modalOrderInfoText}>
                   {selectedOrder.date}
                 </Text>
               </View>
               
               <View style={styles.modalOrderInfoItem}>
-                <Icon name="check-circle" size={20} color="#b937a8" />
+                <Icon name="check-circle" size={20} color="#3B82F6" />
                 <Text style={styles.modalOrderInfoText}>
                   {selectedOrder.status}
                 </Text>
@@ -297,7 +297,7 @@ const OrderHistory = () => {
   return (
     <View style={styles.container}>
       <LinearGradient 
-        colors={['#b937a8', '#8e2e8b']} 
+        colors={['#1E40AF', '#3B82F6']} 
         style={styles.headerGradient}
       >
         <View style={styles.headerContent}>
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   },
   orderCardTotal: {
     fontWeight: 'bold',
-    color: '#b937a8'
+    color: '#3B82F6'
   },
   emptyListContainer: {
     flex: 1,
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
   },
   modalProductPrice: {
     fontWeight: 'bold',
-    color: '#b937a8'
+    color: '#3B82F6'
   },
   modalProductQuantity: {
     color: '#666'
@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
   modalTotalAmount: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#b937a8'
+    color: '#3B82F6'
   }
 });
 
