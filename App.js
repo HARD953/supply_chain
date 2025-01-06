@@ -22,7 +22,7 @@ export default function App() {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <StatusBar 
           style="light" 
-          backgroundColor="#b937a8" 
+          backgroundColor="#1E40AF" 
         />
         <Navigators />
       </SafeAreaView>

@@ -36,7 +36,7 @@ const SplashScreen = ({ navigation }) => {
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <LinearGradient
-        colors={['#b937a8', '#e91e63']}
+        colors={['#1E40AF', '#3B82F6']}
         style={styles.container}
       >
         <View style={styles.logoContainer}>

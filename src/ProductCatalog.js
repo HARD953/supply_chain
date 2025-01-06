@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
-  Text, 
-  FlatList, 
-  TouchableOpacity, 
-  Image, 
-  Modal, 
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  Modal,
   TextInput,
   ScrollView,
-  StyleSheet 
+  StyleSheet,
+  Pressable,
+  Platform
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -96,6 +98,7 @@ const ProductCatalog = ({ navigation }) => {
     {
       id: '1',
       name: 'Lait demi-écrémé',
+      typesupplier: 'Fabricant',
       supplier: 'Lactel',
       price: 1500,
       stock: 150,
@@ -127,11 +130,12 @@ const ProductCatalog = ({ navigation }) => {
     {
       id: '2',
       name: 'Lait demi-écrémé',
+      typesupplier: 'Grossiste',
       supplier: 'Lactel',
       price: 1500,
       stock: 150,
       minStock: 50,
-      categoryId: '2',
+      categoryId: '3',
       image: require('../assets/iphone.jpg'),
       lastOrder: '2024-03-15',
       formats: [
@@ -158,6 +162,7 @@ const ProductCatalog = ({ navigation }) => {
     {
       id: '3',
       name: 'Lait demi-écrémé',
+      typesupplier: 'Semi-Grossiste',
       supplier: 'Lactel',
       price: 1500,
       stock: 150,
@@ -189,6 +194,7 @@ const ProductCatalog = ({ navigation }) => {
     {
       id: '4',
       name: 'Lait demi-écrémé',
+      typesupplier: 'Lactel',
       supplier: 'Lactel',
       price: 1500,
       stock: 150,
@@ -220,6 +226,7 @@ const ProductCatalog = ({ navigation }) => {
     {
       id: '5',
       name: 'Lait demi-écrémé',
+      typesupplier: 'Lactel',
       supplier: 'Lactel',
       price: 1500,
       stock: 150,
@@ -251,6 +258,7 @@ const ProductCatalog = ({ navigation }) => {
     {
       id: '6',
       name: 'Lait demi-écrémé',
+      typesupplier: 'Lactel',
       supplier: 'Lactel',
       price: 1500,
       stock: 150,
@@ -291,6 +299,96 @@ const ProductCatalog = ({ navigation }) => {
   const [filteredProducts, setFilteredProducts] = useState(products);
   const [cartModalVisible, setCartModalVisible] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState(null);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [selectedZone, setSelectedZone] = useState('Tous');
+  const [selectedSupplierType, setSelectedSupplierType] = useState('0');
+
+  const DropdownSelect = ({ 
+    label, 
+    value, 
+    options, 
+    onChange, 
+    placeholder 
+  }) => {
+    const [isOpen, setIsOpen] = useState(false);
+  
+    return (
+      <View style={{ marginBottom: 20 }}>
+        <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>
+          {label}
+        </Text>
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#F5F5F5',
+            borderRadius: 10,
+            padding: 15,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}
+          onPress={() => setIsOpen(!isOpen)}
+        >
+          <Text style={{ color: value ? '#000' : '#666' }}>
+            {value || placeholder}
+          </Text>
+          <Icon 
+            name={isOpen ? "chevron-up" : "chevron-down"} 
+            size={24} 
+            color="#666" 
+          />
+        </TouchableOpacity>
+  
+        {isOpen && (
+          <View style={{
+            backgroundColor: 'white',
+            borderRadius: 10,
+            marginTop: 5,
+            maxHeight: 200,
+            borderWidth: 1,
+            borderColor: '#E0E0E0'
+          }}>
+            <ScrollView>
+              {options.map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={{
+                    padding: 15,
+                    borderBottomWidth: 1,
+                    borderBottomColor: '#E0E0E0'
+                  }}
+                  onPress={() => {
+                    onChange(option);
+                    setIsOpen(false);
+                  }}
+                >
+                  <Text style={{
+                    color: value === option ? '#2563EB' : '#000',
+                    fontWeight: value === option ? 'bold' : 'normal'
+                  }}>
+                    {option}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const getSupplierTypeFromId = (id) => {
+    switch (id) {
+      case '1':
+        return 'Fabricant';
+      case '2':
+        return 'Grossiste';
+      case '3':
+        return 'Semi-Grossiste';
+      default:
+        return null;
+    }
+  };
+
   const [quantity, setQuantity] = useState(1);
   useEffect(() => {
     let filtered = products;
@@ -309,8 +407,20 @@ const ProductCatalog = ({ navigation }) => {
       filtered = filtered.filter(product => product.supplier === selectedSupplier);
     }
 
+    if (selectedZone !== 'Tous') {
+      // Ajoutez ici la logique de filtrage par zone
+      // filtered = filtered.filter(product => product.zone === selectedZone);
+    }
+
+    if (selectedSupplierType !== '0') {
+      const targetType = getSupplierTypeFromId(selectedSupplierType);
+      if (targetType) {
+        filtered = filtered.filter(product => product.typesupplier === targetType);
+      }
+    }
+
     setFilteredProducts(filtered);
-  }, [searchQuery, selectedCategory, selectedSupplier]);
+  }, [searchQuery, selectedCategory, selectedSupplier, selectedZone, selectedSupplierType]);
 
   const addToCart = (product) => {
     const existingProductIndex = cart.findIndex(item => 
@@ -573,6 +683,226 @@ const ProductCatalog = ({ navigation }) => {
     );
   };
 
+  const FilterModal = ({ 
+    visible, 
+    onClose, 
+    categories, 
+    suppliers,
+    selectedCategory,
+    setSelectedCategory,
+    selectedSupplier,
+    setSelectedSupplier,
+    selectedZone,
+    setSelectedZone,
+    selectedSupplierType,
+    setSelectedSupplierType,
+  }) => {
+
+    // État local pour stocker temporairement les valeurs des filtres
+  const [tempCategory, setTempCategory] = useState(selectedCategory);
+  const [tempSupplier, setTempSupplier] = useState(selectedSupplier);
+  const [tempZone, setTempZone] = useState(selectedZone);
+  const [tempSupplierType, setTempSupplierType] = useState(selectedSupplierType);
+
+  // Réinitialiser les états temporaires quand le modal s'ouvre
+  useEffect(() => {
+    if (visible) {
+      setTempCategory(selectedCategory);
+      setTempSupplier(selectedSupplier);
+      setTempZone(selectedZone);
+      setTempSupplierType(selectedSupplierType);
+    }
+  }, [visible]);
+
+  const handleApplyFilters = () => {
+    // Appliquer les filtres
+    setSelectedCategory(tempCategory);
+    setSelectedSupplier(tempSupplier);
+    setSelectedZone(tempZone);
+    setSelectedSupplierType(tempSupplierType);
+    
+    // Fermer le modal
+    onClose();
+  };
+
+    const supplierTypes = [
+      { 
+        id: '0', 
+        name: 'Tous', 
+        icon: 'store', 
+        color: '#607D8B',
+        backgroundColor: '#ECEFF1'
+      },
+      { 
+        id: '1', 
+        name: 'Fabricant', 
+        icon: 'factory', 
+        color: '#FF9800',
+        backgroundColor: '#FFF3E0'
+      },
+      { 
+        id: '2', 
+        name: 'Grossiste', 
+        icon: 'warehouse', 
+        color: '#4CAF50',
+        backgroundColor: '#E8F5E9'
+      },
+      { 
+        id: '3', 
+        name: 'Semi-Grossiste', 
+        icon: 'store-check', 
+        color: '#9C27B0',
+        backgroundColor: '#F3E5F5'
+      }
+    ];
+    const zones = ['Tous', 'Nord', 'Sud', 'Est', 'Ouest', 'Centre'];
+  
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={visible}
+        onRequestClose={onClose}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          justifyContent: 'flex-end'
+        }}>
+          <View style={{
+            backgroundColor: 'white',
+            borderTopLeftRadius: 25,
+            borderTopRightRadius: 25,
+            padding: 20,
+            maxHeight: '80%'
+          }}>
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 20
+            }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Filtres</Text>
+              <TouchableOpacity onPress={onClose}>
+                <Icon name="close" size={24} color="#2563EB" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView>
+              {/* Catégories */}
+              <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>Catégories</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 }}>
+                {categories.map(category => (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 10,
+                      borderRadius: 10,
+                      marginRight: 10,
+                      marginBottom: 10,
+                      backgroundColor: selectedCategory === category.id ? category.color : category.backgroundColor
+                    }}
+                    onPress={() =>
+                      { setSelectedCategory(category.id);
+                        // Ferme le modal
+                      onClose();
+
+                      }
+                    }
+                  >
+                    <Icon 
+                      name={category.icon} 
+                      size={20} 
+                      color={selectedCategory === category.id ? 'white' : category.color}
+                    />
+                    <Text style={{
+                      marginLeft: 5,
+                      color: selectedCategory === category.id ? 'white' : category.color,
+                      fontWeight: 'bold'
+                    }}>
+                      {category.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+  
+              {/* Type de fournisseur */}
+              <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>Type de fournisseur</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 }}>
+                {supplierTypes.map(type => (
+                  <TouchableOpacity
+                    key={type.id}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 10,
+                      borderRadius: 10,
+                      marginRight: 10,
+                      marginBottom: 10,
+                      backgroundColor: selectedSupplierType === type.id ? type.color : type.backgroundColor
+                    }}
+                    onPress={() => {
+                      // Met à jour le type de fournisseur sélectionné
+                      setSelectedSupplierType(type.id);
+                      
+                      // Ferme le modal
+                      onClose();
+                    }}
+                  >
+                    <Icon 
+                      name={type.icon} 
+                      size={20} 
+                      color={selectedSupplierType === type.id ? 'white' : type.color}
+                    />
+                    <Text style={{
+                      marginLeft: 5,
+                      color: selectedSupplierType === type.id ? 'white' : type.color,
+                      fontWeight: 'bold'
+                    }}>
+                      {type.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+  
+              {/* Zone Dropdown */}
+              <DropdownSelect
+                label="Zone"
+                value={selectedZone}
+                options={zones}
+                onChange={setSelectedZone}
+                placeholder="Sélectionner une zone"
+              />
+  
+              {/* Fournisseur Dropdown */}
+              <DropdownSelect
+                label="Fournisseur"
+                value={selectedSupplier}
+                options={suppliers}
+                onChange={setSelectedSupplier}
+                placeholder="Sélectionner un fournisseur"
+              />
+            </ScrollView>
+  
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#2563EB',
+                padding: 15,
+                borderRadius: 10,
+                alignItems: 'center',
+                marginTop: 20
+              }}
+              onPress={onClose}
+            >
+              <Text style={{ color: 'white', fontWeight: 'bold' }}>Appliquer les filtres</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   //Validation de panier
 
   const renderCartModal = () => {
@@ -798,6 +1128,7 @@ const ProductCatalog = ({ navigation }) => {
         }} numberOfLines={2}>
           {item.name}
         </Text>
+        
         <Text style={{
           color: '#666',
           marginBottom: 5,
@@ -815,8 +1146,15 @@ const ProductCatalog = ({ navigation }) => {
             fontWeight: 'bold',
             color: '#2563EB'
           }}>
-            {(item.price / 100).toFixed(2)} €
+            {item.typesupplier }
           </Text>
+          {/* <Text style={{
+            fontSize: 14,
+            fontWeight: 'bold',
+            color: '#2563EB'
+          }}>
+            {(item.price / 100).toFixed(2)} €
+          </Text> */}
           <TouchableOpacity onPress={() => addToCart(item)}>
             <Icon name="cart-plus" size={24} color="#2563EB" />
           </TouchableOpacity>
@@ -837,19 +1175,33 @@ const ProductCatalog = ({ navigation }) => {
           borderBottomRightRadius: 25
         }}
       >
-        <View style={{
+       <View style={{
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: 15
         }}>
-          <Text style={{
-            color: 'white',
-            fontSize: 24,
-            fontWeight: 'bold'
-          }}>
-            Catalogue
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+              onPress={() => setFilterModalVisible(true)}
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                padding: 8,
+                borderRadius: 8
+              }}
+            >
+              <Icon name="filter-variant" size={20} color="white" />
+            </TouchableOpacity>
+            <Text style={{
+              color: 'white',
+              fontSize: 24,
+              fontWeight: 'bold',
+              marginRight: 10
+            }}>
+              Catalogue
+            </Text>
+           
+          </View>
           <TouchableOpacity onPress={() => setCartModalVisible(true)}>
             <Icon name="cart" size={24} color="white" />
             {cart.length > 0 && (
@@ -903,13 +1255,30 @@ const ProductCatalog = ({ navigation }) => {
           />
         </ScrollView>
 
-        <ScrollView 
+        {/* <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false} 
           style={{ marginBottom: 10 }}
         >
           {suppliers.map(renderSupplierItem)}
-        </ScrollView>
+        </ScrollView> */}
+
+    <FilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        categories={categories}
+        suppliers={suppliers}
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
+        selectedSupplier={selectedSupplier}
+        setSelectedSupplier={setSelectedSupplier}
+        selectedZone={selectedZone}
+        setSelectedZone={setSelectedZone}
+        selectedSupplierType={selectedSupplierType}
+      setSelectedSupplierType={setSelectedSupplierType}
+      />
+
+       
       </LinearGradient>
 
       <FlatList

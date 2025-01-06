@@ -32,7 +32,7 @@ const CustomHeaderTitle = ({ title }) => (
 
 export default function Navigue({ navigation }) {
   return (
-      <Stack.Navigator initialRouteName="LoginCollecte">
+      <Stack.Navigator initialRouteName="LoginScreen">
         <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="LoginCollecte" component={LoginCollecte} options={{ headerShown: false }}/>
         <Stack.Screen name="Dashboard" component={Dashboard} options={{ headerShown: false }}/>

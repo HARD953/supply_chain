@@ -107,7 +107,6 @@ const LoginCollecte = ({ navigation }) => {
                 }}
                 left={<TextInput.Icon icon="email" color={isEmailFocused ? '#2563EB' : '#64748B'} />}
               />
-
               <TextInput
                 label="Mot de passe"
                 value={password}
@@ -133,7 +132,6 @@ const LoginCollecte = ({ navigation }) => {
                   />
                 }
               />
-
               <TouchableOpacity 
                 style={styles.forgotPassword}
                 activeOpacity={0.7}
