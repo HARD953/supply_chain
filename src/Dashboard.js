@@ -174,7 +174,8 @@ const Dashboard = ({ navigation }) => {
       <View style={styles.quickActionButtons}>
         <TouchableOpacity 
           style={styles.quickActionButton}
-          onPress={() => navigation.navigate('ProductCatalog')}
+          //onPress={() => navigation.navigate('ProductCatalog')} 
+          onPress={() => navigation.navigate('BusinessTypeSelection')}
         >
           <View style={styles.quickActionButtonContent}>
             <MaterialCommunityIcons name="plus-circle" size={24} color="#1E40AF" />

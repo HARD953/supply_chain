@@ -19,7 +19,12 @@ import NotificationsScreen from './NotificationsScreen';
 import HomeDashboard from './HomeDashboard';
 import CommercialDataCollection from './CommercialDataCollection';  
 import LoginCollecte from './LoginCollecte';
-import CommercialDataRecap from './CommercialDataRecap';
+import CommercialDataRecap from './CommercialDataRecap'; 
+import SelectionModal from './SelectionModal';  
+import BoutiqueDataCollection from './BoutiqueDataCollection'; 
+import ProduitDataCollection from './ProduitDataCollection';  
+import FournisseurDataCollection from './FournisseurDataCollection'; 
+import BusinessTypeSelection from './BusinessTypeSelection';
 // import YourComponent1 from './Pages/Coordonne'; 
   
 const Stack = createStackNavigator();
@@ -39,7 +44,7 @@ export default function Navigue({ navigation }) {
         <Stack.Screen name="ProductCatalog" component={ProductCatalog} options={{ headerShown: false }}/>
         <Stack.Screen name="OrderHistory" component={OrderHistory} options={{ headerShown: false }}/>
         <Stack.Screen name="TopProductsScreen" component={TopProductsScreen} options={{ headerShown: false }}/>
-        <Stack.Screen name="PriceComparator" component={PriceComparator} options={{ headerShown: false }}/>
+        <Stack.Screen name="PriceComparator" component={PriceComparator} options={{ headerShown: false }}/>  
         <Stack.Screen name="NotificationsScreen" component={NotificationsScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="ManagerProfileScreen" component={ManagerProfileScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="SupplierSignUpScreen" component={SupplierSignUpScreen} options={{ headerShown: false }}/>
@@ -48,7 +53,12 @@ export default function Navigue({ navigation }) {
         <Stack.Screen name="PreOrderManagement" component={PreOrderManagement} options={{ headerShown: false }}/>
         <Stack.Screen name="CommercialDataCollection" component={CommercialDataCollection} options={{ headerShown: false }}/>
         <Stack.Screen name="CommercialDataRecap" component={CommercialDataRecap} options={{ headerShown: false }}/>
-        <Stack.Screen name="HomeDashboard" component={HomeDashboard} options={{ headerShown: false }}/>
+        <Stack.Screen name="HomeDashboard" component={HomeDashboard} options={{ headerShown: false }}/> 
+        <Stack.Screen name="SelectionModal" component={SelectionModal} options={{ headerShown: false }}/> 
+        <Stack.Screen name="BoutiqueDataCollection" component={BoutiqueDataCollection} options={{ headerShown: false }}/> 
+        <Stack.Screen name="ProduitDataCollection" component={ProduitDataCollection} options={{ headerShown: false }}/>   
+        <Stack.Screen name="FournisseurDataCollection" component={FournisseurDataCollection} options={{ headerShown: false }}/>
+        <Stack.Screen name="BusinessTypeSelection" component={BusinessTypeSelection} options={{ headerShown: false }}/>  
       </Stack.Navigator> 
   );
 }

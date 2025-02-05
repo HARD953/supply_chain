@@ -8,13 +8,17 @@ import {
   Dimensions,
   Platform
 } from 'react-native';
-import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
-import { LineChart, PieChart } from 'react-native-chart-kit';
+import { MaterialIcons } from '@expo/vector-icons';
+import { LineChart } from 'react-native-chart-kit';
 import { LinearGradient } from 'expo-linear-gradient';
+import SelectionModal from './SelectionModal';
 
 const { width, height } = Dimensions.get('window');
 
 const HomeDashboard = ({ navigation }) => {
+  const [activeTab, setActiveTab] = useState('surfaces');
+  const [modalVisible, setModalVisible] = useState(false);
+
   // Données de démonstration
   const stats = {
     totalBoutiques: 156,
@@ -23,19 +27,34 @@ const HomeDashboard = ({ navigation }) => {
     collectesAujourdhui: 23
   };
 
-  const recentesCollectes = [
-    { id: 1, nom: "Boutique Aminata", type: "Boutique", date: "2024-03-23", statut: "complété" },
-    { id: 2, nom: "Super Marché Express", type: "Supermarché", date: "2024-03-23", statut: "en cours" },
-    { id: 3, nom: "Kiosque Mobile", type: "Boutique", date: "2024-03-22", statut: "complété" },
-    { id: 4, nom: "Grossiste Central", type: "Grossiste", date: "2024-03-22", statut: "en attente" }
-  ];
+  // Données séparées pour chaque type de collecte
+  const collectesData = {
+    surfaces: [
+      { id: 1, nom: "Boutique Aminata", type: "Boutique", date: "2024-03-23", statut: "complété" },
+      { id: 2, nom: "Super Marché Express", type: "Supermarché", date: "2024-03-23", statut: "en cours" },
+      { id: 3, nom: "Kiosque Mobile", type: "Boutique", date: "2024-03-22", statut: "complété" },
+      { id: 4, nom: "Mini Market", type: "Supermarché", date: "2024-03-21", statut: "en attente" }
+    ],
+    fournisseurs: [
+      { id: 1, nom: "Fournisseur Alpha", type: "Grossiste", date: "2024-03-23", statut: "en cours" },
+      { id: 2, nom: "Distribution Beta", type: "Distributeur", date: "2024-03-22", statut: "complété" },
+      { id: 3, nom: "Import Export Gamma", type: "Importateur", date: "2024-03-21", statut: "en attente" },
+      { id: 4, nom: "Commerce Delta", type: "Grossiste", date: "2024-03-20", statut: "complété" }
+    ],
+    produits: [
+      { id: 1, nom: "Riz Premium", type: "Alimentaire", date: "2024-03-23", statut: "complété" },
+      { id: 2, nom: "Huile Végétale", type: "Alimentaire", date: "2024-03-22", statut: "en cours" },
+      { id: 3, nom: "Savon Local", type: "Hygiène", date: "2024-03-21", statut: "en attente" },
+      { id: 4, nom: "Farine de Blé", type: "Alimentaire", date: "2024-03-20", statut: "complété" }
+    ]
+  };
 
   const graphData = {
     labels: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
     datasets: [
       {
         data: [15, 22, 18, 25, 20, 12, 23],
-        color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`  // Bleu pour le graphique
+        color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`
       }
     ]
   };
@@ -57,6 +76,46 @@ const HomeDashboard = ({ navigation }) => {
     </LinearGradient>
   );
 
+  const TabButton = ({ title, isActive, onPress }) => (
+    <TouchableOpacity
+      style={[styles.tabButton, isActive && styles.activeTabButton]}
+      onPress={onPress}
+    >
+      <Text style={[styles.tabButtonText, isActive && styles.activeTabButtonText]}>
+        {title}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const renderCollectesList = (collectes) => (
+    <View style={styles.collectesList}>
+      {collectes.map(collecte => (
+        <TouchableOpacity 
+          key={collecte.id}
+          style={styles.collecteItem}
+          onPress={() => navigation.navigate('CollecteDetails', { id: collecte.id })}
+        >
+          <View style={styles.collecteInfo}>
+            <Text style={styles.collecteName}>{collecte.nom}</Text>
+            <Text style={styles.collecteType}>{collecte.type}</Text>
+          </View>
+          <View style={styles.collecteStatus}>
+            <Text style={[
+              styles.statusText,
+              { 
+                color: collecte.statut === 'complété' ? '#2563EB' : 
+                       collecte.statut === 'en cours' ? '#60A5FA' : '#94A3B8'
+              }
+            ]}>
+              {collecte.statut.toUpperCase()}
+            </Text>
+            <Text style={styles.collecteDate}>{collecte.date}</Text>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -73,24 +132,23 @@ const HomeDashboard = ({ navigation }) => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Tableau de Bord</Text>
         <TouchableOpacity 
-          onPress={() => navigation.navigate('CommercialDataCollection')}
+          onPress={() => setModalVisible(true)}
           style={styles.addButton}
         >
           <MaterialIcons name="add" size={24} color="#fff" />
         </TouchableOpacity>
       </LinearGradient>
+
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Section Statistiques */}
         <View style={styles.statsGrid}>
-          {renderStatCard("Boutiques", stats.totalBoutiques, "store", ["#4c669f", "#3b5998"])}
-          {renderStatCard("Supèrette", stats.totalProduits, "inventory", ["#b937a8", "#8e2de2"])}
-          {renderStatCard("SuperMarché", stats.totalBoutiques, "store", ["#4c669f", "#3b5998"])}
-          {renderStatCard("Quincaillerie", stats.totalProduits, "inventory", ["#b937a8", "#8e2de2"])}
-          {renderStatCard("Petit commerce", stats.totalFournisseurs, "people", ["#00b09b", "#96c93d"])}
-          {renderStatCard("Aujourd'hui", stats.collectesAujourdhui, "today", ["#ff416c", "#ff4b2b"])}
+          {renderStatCard("Boutiques", stats.totalBoutiques, "store", ["#3B82F6", "#1D4ED8"])}
+          {renderStatCard("Supèrette", stats.totalProduits, "inventory", ["#8B5CF6", "#6D28D9"])}
+          {renderStatCard("SuperMarché", stats.totalBoutiques, "store", ["#10B981", "#059669"])}
+          {renderStatCard("Quincaillerie", stats.totalProduits, "inventory", ["#F59E0B", "#D97706"])}
+          {renderStatCard("Petit commerce", stats.totalFournisseurs, "people", ["#EC4899", "#DB2777"])}
+          {renderStatCard("Grossiste", stats.collectesAujourdhui, "today", ["#6366F1", "#4F46E5"])}
         </View>
 
-        {/* Graphique des collectes */}
         <View style={styles.chartCard}>
           <Text style={styles.chartTitle}>Collectes cette semaine</Text>
           <LineChart
@@ -112,35 +170,34 @@ const HomeDashboard = ({ navigation }) => {
           />
         </View>
 
-        {/* Liste des collectes récentes */}
         <View style={styles.recentCollectes}>
           <Text style={styles.sectionTitle}>Collectes Récentes</Text>
-          {recentesCollectes.map(collecte => (
-            <TouchableOpacity 
-              key={collecte.id}
-              style={styles.collecteItem}
-              onPress={() => navigation.navigate('CollecteDetails', { id: collecte.id })}
-            >
-              <View style={styles.collecteInfo}>
-                <Text style={styles.collecteName}>{collecte.nom}</Text>
-                <Text style={styles.collecteType}>{collecte.type}</Text>
-              </View>
-              <View style={styles.collecteStatus}>
-                <Text style={[
-                  styles.statusText,
-                  { 
-                    color: collecte.statut === 'complété' ? '#2563EB' : 
-                           collecte.statut === 'en cours' ? '#60A5FA' : '#94A3B8'
-                  }
-                ]}>
-                  {collecte.statut.toUpperCase()}
-                </Text>
-                <Text style={styles.collecteDate}>{collecte.date}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          <View style={styles.tabsContainer}>
+            <TabButton 
+              title="Surfaces" 
+              isActive={activeTab === 'surfaces'} 
+              onPress={() => setActiveTab('surfaces')}
+            />
+            <TabButton 
+              title="Fournisseurs" 
+              isActive={activeTab === 'fournisseurs'} 
+              onPress={() => setActiveTab('fournisseurs')}
+            />
+            <TabButton 
+              title="Produits" 
+              isActive={activeTab === 'produits'} 
+              onPress={() => setActiveTab('produits')}
+            />
+          </View>
+          {renderCollectesList(collectesData[activeTab])}
         </View>
       </ScrollView>
+
+      <SelectionModal 
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        navigation={navigation}
+      />
     </View>
   );
 };
@@ -240,6 +297,41 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
     color: '#1E3A8A',
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 8,
+    padding: 4,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  activeTabButton: {
+    backgroundColor: '#fff',
+    shadowColor: '#1E3A8A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  tabButtonText: {
+    fontSize: 14,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  activeTabButtonText: {
+    color: '#1E3A8A',
+    fontWeight: 'bold',
+  },
+  collectesList: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
   },
   collecteItem: {
     flexDirection: 'row',

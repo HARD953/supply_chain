@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// LoginScreen.js
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -12,36 +13,39 @@ import {
   Dimensions,
   StatusBar,
   ScrollView,
-  Keyboard
+  Keyboard,
 } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
+import { useAuth } from './AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
 const LoginScreen = ({ navigation }) => {
+  //const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     Keyboard.dismiss();
     if (!email || !password) {
-      Alert.alert(
-        'Champs requis',
-        'Veuillez remplir tous les champs pour continuer',
-        [{ text: 'Compris', style: 'default' }]
-      );
+      Alert.alert('Champs requis', 'Veuillez remplir tous les champs pour continuer', [
+        { text: 'Compris', style: 'default' },
+      ]);
       return;
     }
 
-    setTimeout(() => {
-      navigation.navigate('SupplierProductsScreen');
-    }, 1000);
+    // try {
+    //   await login(email, password);
+    //   navigation.navigate('Dashboard');
+    // } catch (error) {
+    //   Alert.alert('Erreur de connexion', error.message || 'Une erreur est survenue');
+    // }
   };
 
   const validateEmail = (email) => {
@@ -58,11 +62,10 @@ const LoginScreen = ({ navigation }) => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       />
-      
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardAvoidingView}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -70,19 +73,15 @@ const LoginScreen = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.logoContainer}>
-            <Image 
-              source={require('../assets/image.png')} 
-              style={styles.logo} 
+            <Image
+              source={require('../assets/image.png')}
+              style={styles.logo}
               resizeMode="contain"
             />
             <Text style={styles.brandName}>Supply Chain Portal</Text>
             <Text style={styles.subtitle}>Gérez vos commandes efficacement</Text>
           </View>
-          <Animatable.View 
-            animation="slideInUp"
-            duration={1000}
-            style={styles.formContainer}
-          >
+          <Animatable.View animation="slideInUp" duration={1000} style={styles.formContainer}>
             <View style={styles.formContainer}>
               <Text style={styles.welcomeText}>Connexion</Text>
 
@@ -98,7 +97,7 @@ const LoginScreen = ({ navigation }) => {
                 onBlur={() => setIsEmailFocused(false)}
                 error={email.length > 0 && !validateEmail(email)}
                 theme={{
-                  colors: { 
+                  colors: {
                     primary: '#2563EB',
                     error: '#DC2626',
                     placeholder: '#64748B',
@@ -118,7 +117,7 @@ const LoginScreen = ({ navigation }) => {
                 onFocus={() => setIsPasswordFocused(true)}
                 onBlur={() => setIsPasswordFocused(false)}
                 theme={{
-                  colors: { 
+                  colors: {
                     primary: '#2563EB',
                     placeholder: '#64748B',
                   },
@@ -126,26 +125,19 @@ const LoginScreen = ({ navigation }) => {
                 }}
                 left={<TextInput.Icon icon="lock" color={isPasswordFocused ? '#2563EB' : '#64748B'} />}
                 right={
-                  <TextInput.Icon 
-                    icon={isPasswordVisible ? "eye-off" : "eye"}
+                  <TextInput.Icon
+                    icon={isPasswordVisible ? 'eye-off' : 'eye'}
                     onPress={() => setIsPasswordVisible(!isPasswordVisible)}
                     color={isPasswordFocused ? '#2563EB' : '#64748B'}
                   />
                 }
               />
 
-              <TouchableOpacity 
-                style={styles.forgotPassword}
-                activeOpacity={0.7}
-              >
+              <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.7}>
                 <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={styles.loginButton}
-                onPress={()=>{navigation.navigate('Dashboard')}}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity style={styles.loginButton} onPress={handleLogin} activeOpacity={0.8}>
                 <LinearGradient
                   colors={['#1E40AF', '#3B82F6']}
                   start={{ x: 0, y: 0 }}
@@ -163,10 +155,10 @@ const LoginScreen = ({ navigation }) => {
                 <View style={styles.divider} />
               </View>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.ssoButton}
                 activeOpacity={0.7}
-                onPress={()=>navigation.navigate('SupplierSignUpScreen')}
+                onPress={() => navigation.navigate('SupplierSignUpScreen')}
               >
                 <MaterialCommunityIcons name="store" size={24} color="#2563EB" />
                 <Text style={styles.ssoButtonText}>Créer une boutique</Text>
@@ -338,7 +330,7 @@ const styles = StyleSheet.create({
     color: '#2563EB',
     fontWeight: '600',
     fontSize: 14,
-  }
+  },
 });
 
 export default LoginScreen;
