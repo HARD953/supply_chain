@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const SelectionModal = ({ visible, onClose, navigation }) => {
   const options = [
-    { id: 1, title: "Surface", icon: "store", route: "BoutiqueDataCollection" },
+    { id: 1, title: "Site", icon: "store", route: "BoutiqueDataCollection" },
     { id: 2, title: "Produit", icon: "inventory", route: "ProduitDataCollection" },
     { id: 3, title: "Fournisseur", icon: "people", route: "FournisseurDataCollection" }
   ];

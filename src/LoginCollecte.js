@@ -28,21 +28,45 @@ const LoginCollecte = ({ navigation }) => {
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
-  const handleLogin = () => {
-    Keyboard.dismiss();
-    if (!email || !password) {
-      Alert.alert(
-        'Champs requis',
-        'Veuillez remplir tous les champs pour continuer',
-        [{ text: 'Compris', style: 'default' }]
-      );
-      return;
-    }
+  // const handleLogin = () => {
+  //   Keyboard.dismiss();
+  //   if (!email || !password) {
+  //     Alert.alert(
+  //       'Champs requis',
+  //       'Veuillez remplir tous les champs pour continuer',
+  //       [{ text: 'Compris', style: 'default' }]
+  //     );
+  //     return;
+  //   }
 
-    setTimeout(() => {
-      navigation.navigate('SupplierProductsScreen');
-    }, 1000);
-  };
+  //   setTimeout(() => {
+  //     navigation.navigate('SupplierProductsScreen');
+  //   }, 1000);
+  // };
+
+  const handleLogin = async () => {
+      Keyboard.dismiss();
+  
+      // Vérification des champs requis
+      if (!email || !password) {
+        Alert.alert('Champs requis', 'Veuillez remplir tous les champs pour continuer', [
+          { text: 'Compris', style: 'default' },
+        ]);
+        return;
+      }
+  
+      // Vérification des identifiants
+      if (
+        (email === 'issa@gmail.com' && password === 'issa01') ||
+        (email === 'romy@gmail.com' && password === 'romy01')
+      ) {
+        // Connexion réussie, naviguer vers le tableau de bord
+        navigation.navigate('HomeDashboard');
+      } else {
+        // Identifiants incorrects
+        Alert.alert('Erreur de connexion', 'Email ou mot de passe incorrect');
+      }
+    };
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -94,8 +118,8 @@ const LoginCollecte = ({ navigation }) => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 mode="outlined"
-                onFocus={() => setIsEmailFocused(true)}
-                onBlur={() => setIsEmailFocused(false)}
+                // onFocus={() => setIsEmailFocused(true)}
+                // onBlur={() => setIsEmailFocused(false)}
                 error={email.length > 0 && !validateEmail(email)}
                 theme={{
                   colors: { 
@@ -114,8 +138,8 @@ const LoginCollecte = ({ navigation }) => {
                 style={[styles.input, isPasswordFocused && styles.inputFocused]}
                 secureTextEntry={!isPasswordVisible}
                 mode="outlined"
-                onFocus={() => setIsPasswordFocused(true)}
-                onBlur={() => setIsPasswordFocused(false)}
+                // onFocus={() => setIsPasswordFocused(true)}
+                // onBlur={() => setIsPasswordFocused(false)}
                 theme={{
                   colors: { 
                     primary: '#2563EB',
@@ -141,7 +165,7 @@ const LoginCollecte = ({ navigation }) => {
 
               <TouchableOpacity 
                 style={styles.loginButton}
-                onPress={()=>{navigation.navigate('HomeDashboard')}}
+                onPress={handleLogin}
                 activeOpacity={0.8}
               >
                 <LinearGradient

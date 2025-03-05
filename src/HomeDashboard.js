@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,57 +6,82 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
-  Platform
+  Platform,
+  Image
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { LineChart } from 'react-native-chart-kit';
 import { LinearGradient } from 'expo-linear-gradient';
 import SelectionModal from './SelectionModal';
+import UpdateModal from './UpdateModal';
 
 const { width, height } = Dimensions.get('window');
 
 const HomeDashboard = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('surfaces');
   const [modalVisible, setModalVisible] = useState(false);
+  const [updateModalVisible, setUpdateModalVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [statsData, setStatsData] = useState([]);
+  const [shopsData, setShopsData] = useState([]);
 
-  // Données de démonstration
-  const stats = {
-    totalBoutiques: 156,
-    totalProduits: 1234,
-    totalFournisseurs: 45,
-    collectesAujourdhui: 23
+  const typeColors = {
+    'BRANDED': ["#EC4899", "#DB2777"],
+    'SUPÉRETTE': ["#8B5CF6", "#6D28D9"],
+    'SUPERMARCHÉ': ["#10B981", "#059669"],
+    'QUINCAILLERIE': ["#F59E0B", "#D97706"],
+    'BOUTIQUE': ["#3B82F6", "#1D4ED8"],
+    'GROSSISTE': ["#6366F1", "#4F46E5"]
   };
 
-  // Données séparées pour chaque type de collecte
-  const collectesData = {
-    surfaces: [
-      { id: 1, nom: "Boutique Aminata", type: "Boutique", date: "2024-03-23", statut: "complété" },
-      { id: 2, nom: "Super Marché Express", type: "Supermarché", date: "2024-03-23", statut: "en cours" },
-      { id: 3, nom: "Kiosque Mobile", type: "Boutique", date: "2024-03-22", statut: "complété" },
-      { id: 4, nom: "Mini Market", type: "Supermarché", date: "2024-03-21", statut: "en attente" }
-    ],
-    fournisseurs: [
-      { id: 1, nom: "Fournisseur Alpha", type: "Grossiste", date: "2024-03-23", statut: "en cours" },
-      { id: 2, nom: "Distribution Beta", type: "Distributeur", date: "2024-03-22", statut: "complété" },
-      { id: 3, nom: "Import Export Gamma", type: "Importateur", date: "2024-03-21", statut: "en attente" },
-      { id: 4, nom: "Commerce Delta", type: "Grossiste", date: "2024-03-20", statut: "complété" }
-    ],
-    produits: [
-      { id: 1, nom: "Riz Premium", type: "Alimentaire", date: "2024-03-23", statut: "complété" },
-      { id: 2, nom: "Huile Végétale", type: "Alimentaire", date: "2024-03-22", statut: "en cours" },
-      { id: 3, nom: "Savon Local", type: "Hygiène", date: "2024-03-21", statut: "en attente" },
-      { id: 4, nom: "Farine de Blé", type: "Alimentaire", date: "2024-03-20", statut: "complété" }
-    ]
+  const typeIcons = {
+    'BRANDED': "people",
+    'SUPÉRETTE': "inventory",
+    'SUPERMARCHÉ': "store",
+    'QUINCAILLERIE': "build",
+    'BOUTIQUE': "store",
+    'GROSSISTE': "local-shipping"
   };
 
-  const graphData = {
-    labels: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
-    datasets: [
-      {
-        data: [15, 22, 18, 25, 20, 12, 23],
-        color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`
-      }
-    ]
+  useEffect(() => {
+    fetchStats();
+    fetchData();
+  }, [activeTab]);
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('https://supply-3.onrender.com/api/stats/by-type/');
+      const data = await response.json();
+      setStatsData(data);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des statistiques:', error);
+    }
+  };
+
+  const fetchData = async () => {
+    try {
+      let endpoint = 'shops';
+      if (activeTab === 'fournisseurs') endpoint = 'fournisseurs'; // À remplacer par l'endpoint réel
+      if (activeTab === 'produits') endpoint = 'productscollecte'; // À remplacer par l'endpoint réel
+
+      const response = await fetch(`https://supply-3.onrender.com/api/${endpoint}/`);
+      const data = await response.json();
+      setShopsData(data);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données:', error);
+    }
+  };
+
+  const handleItemPress = (item) => {
+    setSelectedItem(item);
+    setUpdateModalVisible(true);
+  };
+
+  const handleUpdateItem = (updatedItem) => {
+    setShopsData(prevData => 
+      prevData.map(item => 
+        item.id === updatedItem.id ? updatedItem : item
+      )
+    );
   };
 
   const renderStatCard = (title, value, icon, colors) => (
@@ -76,6 +101,18 @@ const HomeDashboard = ({ navigation }) => {
     </LinearGradient>
   );
 
+  const renderDynamicStatCards = () => {
+    return statsData.map((stat) => {
+      const type = stat.typecommerce.toUpperCase();
+      return renderStatCard(
+        type,
+        stat.total,
+        typeIcons[type] || "store",
+        typeColors[type] || ["#6B7280", "#4B5563"]
+      );
+    });
+  };
+
   const TabButton = ({ title, isActive, onPress }) => (
     <TouchableOpacity
       style={[styles.tabButton, isActive && styles.activeTabButton]}
@@ -87,29 +124,36 @@ const HomeDashboard = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  const renderCollectesList = (collectes) => (
+  const renderList = () => (
     <View style={styles.collectesList}>
-      {collectes.map(collecte => (
+      {shopsData.map(item => (
         <TouchableOpacity 
-          key={collecte.id}
+          key={item.id}
           style={styles.collecteItem}
-          onPress={() => navigation.navigate('CollecteDetails', { id: collecte.id })}
+          onPress={() => handleItemPress(item)}
         >
-          <View style={styles.collecteInfo}>
-            <Text style={styles.collecteName}>{collecte.nom}</Text>
-            <Text style={styles.collecteType}>{collecte.type}</Text>
+          <View style={styles.shopItemContainer}>
+            {item.image && (
+              <Image 
+                source={{ uri: item.image }}
+                style={styles.shopImage}
+              />
+            )}
+            <View style={styles.collecteInfo}>
+              <Text style={styles.collecteName}>{item.name}</Text>
+              <Text style={styles.collecteType}>{item.typecommerce}</Text>
+              <Text style={styles.shopOwner}>{item.owner_name}</Text>
+            </View>
           </View>
           <View style={styles.collecteStatus}>
             <Text style={[
               styles.statusText,
-              { 
-                color: collecte.statut === 'complété' ? '#2563EB' : 
-                       collecte.statut === 'en cours' ? '#60A5FA' : '#94A3B8'
-              }
+              { color: item.type === 'BRANDED' ? '#2563EB' : '#60A5FA' }
             ]}>
-              {collecte.statut.toUpperCase()}
+              {item.type}
             </Text>
-            <Text style={styles.collecteDate}>{collecte.date}</Text>
+            <Text style={styles.collecteDate}>{item.owner_phone}</Text>
+            
           </View>
         </TouchableOpacity>
       ))}
@@ -141,40 +185,18 @@ const HomeDashboard = ({ navigation }) => {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.statsGrid}>
-          {renderStatCard("Boutiques", stats.totalBoutiques, "store", ["#3B82F6", "#1D4ED8"])}
-          {renderStatCard("Supèrette", stats.totalProduits, "inventory", ["#8B5CF6", "#6D28D9"])}
-          {renderStatCard("SuperMarché", stats.totalBoutiques, "store", ["#10B981", "#059669"])}
-          {renderStatCard("Quincaillerie", stats.totalProduits, "inventory", ["#F59E0B", "#D97706"])}
-          {renderStatCard("Petit commerce", stats.totalFournisseurs, "people", ["#EC4899", "#DB2777"])}
-          {renderStatCard("Grossiste", stats.collectesAujourdhui, "today", ["#6366F1", "#4F46E5"])}
+          {renderDynamicStatCards()}
         </View>
 
         <View style={styles.chartCard}>
           <Text style={styles.chartTitle}>Collectes cette semaine</Text>
-          <LineChart
-            data={graphData}
-            width={width - 40}
-            height={220}
-            chartConfig={{
-              backgroundColor: "#fff",
-              backgroundGradientFrom: "#fff",
-              backgroundGradientTo: "#fff",
-              decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
-              style: {
-                borderRadius: 16
-              }
-            }}
-            style={styles.chart}
-            bezier
-          />
         </View>
 
         <View style={styles.recentCollectes}>
-          <Text style={styles.sectionTitle}>Collectes Récentes</Text>
+          <Text style={styles.sectionTitle}>Liste des données</Text>
           <View style={styles.tabsContainer}>
             <TabButton 
-              title="Surfaces" 
+              title="Sites" 
               isActive={activeTab === 'surfaces'} 
               onPress={() => setActiveTab('surfaces')}
             />
@@ -189,7 +211,7 @@ const HomeDashboard = ({ navigation }) => {
               onPress={() => setActiveTab('produits')}
             />
           </View>
-          {renderCollectesList(collectesData[activeTab])}
+          {renderList()}
         </View>
       </ScrollView>
 
@@ -198,6 +220,19 @@ const HomeDashboard = ({ navigation }) => {
         onClose={() => setModalVisible(false)}
         navigation={navigation}
       />
+
+      {selectedItem && (
+        <UpdateModal
+          visible={updateModalVisible}
+          onClose={() => {
+            setUpdateModalVisible(false);
+            setSelectedItem(null);
+          }}
+          item={selectedItem}
+          type={activeTab === 'surfaces' ? 'shops' : activeTab}
+          onUpdate={handleUpdateItem}
+        />
+      )}
     </View>
   );
 };
@@ -241,7 +276,8 @@ const styles = StyleSheet.create({
     height: height / 8,
     marginBottom: 8,
     borderRadius: 12,
-    padding: 16,
+    
+    padding: 10,
     elevation: 3,
     shadowColor: '#1E3A8A',
     shadowOffset: { width: 0, height: 2 },
@@ -281,10 +317,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
     color: '#1E3A8A',
-  },
-  chart: {
-    marginVertical: 8,
-    borderRadius: 16,
   },
   recentCollectes: {
     backgroundColor: '#fff',
@@ -337,8 +369,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 12,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
+  },
+  shopItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  shopImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
   },
   collecteInfo: {
     flex: 1,
@@ -352,6 +396,11 @@ const styles = StyleSheet.create({
   collecteType: {
     fontSize: 14,
     color: '#64748b',
+  },
+  shopOwner: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 2,
   },
   collecteStatus: {
     alignItems: 'flex-end',

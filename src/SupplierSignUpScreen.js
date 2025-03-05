@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Image,
   Alert,
   Dimensions,
   StatusBar,
@@ -18,40 +17,47 @@ import { TextInput, ActivityIndicator } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 
 const { width, height } = Dimensions.get('window');
 
 const SupplierSignUpScreen = ({ navigation }) => {
-  const [companyName, setCompanyName] = useState('');
-  const [siret, setSiret] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [surfaceType, setSurfaceType] = useState('');
-  const [location, setLocation] = useState('');
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    confirmPassword: '',
+    email: '',
+    user_type: 'WHOLESALER',
+    phone_number: '',
+    address: '',
+    user_name: '',
+    company_name: '',
+    company_tax_id: '',
+    website: '',
+    contact_email: '',
+    contact_person: '',
+    business_address: '',
+    image: null
+  });
+  
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const getLocation = async () => {
     setIsLoadingLocation(true);
     try {
-      // Demande de permission d'accès à la localisation
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
           'Permission refusée',
-          'L\'accès à la localisation est nécessaire pour cette fonctionnalité',
-          [{ text: 'OK', style: 'default' }]
+          'L\'accès à la localisation est nécessaire pour cette fonctionnalité'
         );
-        setIsLoadingLocation(false);
         return;
       }
 
-      // Récupération de la position actuelle
       const location = await Location.getCurrentPositionAsync({});
-      
-      // Conversion des coordonnées en adresse
       const address = await Location.reverseGeocodeAsync({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude
@@ -65,70 +71,150 @@ const SupplierSignUpScreen = ({ navigation }) => {
           addr.city,
           addr.region,
         ].filter(Boolean).join(', ');
-        setLocation(locationString);
+        setFormData(prev => ({
+          ...prev,
+          business_address: locationString,
+          address: locationString
+        }));
       }
     } catch (error) {
-      Alert.alert(
-        'Erreur',
-        'Impossible de récupérer votre position',
-        [{ text: 'OK', style: 'default' }]
-      );
+      Alert.alert('Erreur', 'Impossible de récupérer votre position');
     } finally {
       setIsLoadingLocation(false);
     }
   };
 
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setFormData(prev => ({
+        ...prev,
+        image: result.assets[0]
+      }));
+    }
+  };
+
   const validateForm = () => {
-    if (!companyName || !siret || !email || !password || !confirmPassword || !surfaceType || !location) {
-      Alert.alert(
-        'Champs requis',
-        'Veuillez remplir tous les champs pour continuer',
-        [{ text: 'Compris', style: 'default' }]
-      );
+    if (!formData.username || !formData.password || !formData.email || 
+        !formData.phone_number || !formData.company_name || !formData.company_tax_id) {
+      Alert.alert('Champs requis', 'Veuillez remplir tous les champs obligatoires');
       return false;
     }
     
-    if (password !== confirmPassword) {
-      Alert.alert(
-        'Erreur',
-        'Les mots de passe ne correspondent pas',
-        [{ text: 'Compris', style: 'default' }]
-      );
+    if (formData.password !== formData.confirmPassword) {
+      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
       return false;
     }
 
-    if (!validateEmail(email)) {
-      Alert.alert(
-        'Email invalide',
-        'Veuillez entrer une adresse email valide',
-        [{ text: 'Compris', style: 'default' }]
-      );
+    if (!validateEmail(formData.email)) {
+      Alert.alert('Email invalide', 'Veuillez entrer une adresse email valide');
       return false;
     }
 
     return true;
   };
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     Keyboard.dismiss();
-    if (validateForm()) {
-      // Logique d'inscription à implémenter
+    if (!validateForm()) return;
+  
+    setIsSubmitting(true);
+    try {
+      // Création du FormData pour envoyer à la fois les données et l'image
+      const formDataToSend = new FormData();
+  
+      // Ajout de toutes les données du formulaire
+      formDataToSend.append('username', formData.username);
+      formDataToSend.append('password', formData.password);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('user_type', 'WHOLESALER');
+      formDataToSend.append('phone_number', formData.phone_number);
+      formDataToSend.append('address', formData.business_address);
+      formDataToSend.append('user_name', formData.username);
+      formDataToSend.append('company_name', formData.company_name);
+      formDataToSend.append('company_tax_id', formData.company_tax_id);
+      formDataToSend.append('website', formData.website || '');
+      formDataToSend.append('contact_email', formData.email);
+      formDataToSend.append('contact_person', formData.username);
+      formDataToSend.append('business_address', formData.business_address);
+  
+      // Ajout de l'image si elle existe
+      if (formData.image) {
+        formDataToSend.append('image', {
+          uri: formData.image.uri,
+          type: 'image/jpeg',
+          name: 'profile.jpg'
+        });
+      }
+  
+      console.log('Envoi des données...', Object.fromEntries(formDataToSend));
+  
+      const response = await fetch('https://supply-3.onrender.com/api/register/', {
+        method: 'POST',
+        body: formDataToSend,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+  
+      console.log('Status de la réponse:', response.status);
+      
+      const responseData = await response.text();
+      console.log('Réponse brute:', responseData);
+  
+      let jsonData;
+      try {
+        jsonData = JSON.parse(responseData);
+      } catch (e) {
+        console.log('Erreur parsing JSON:', e);
+        Alert.alert('Erreur', 'Format de réponse invalide du serveur');
+        return;
+      }
+  
+      if (response.ok) {
+        Alert.alert(
+          'Inscription réussie',
+          'Votre compte a été créé avec succès',
+          [
+            {
+              text: 'Continuer',
+              onPress: () => navigation.navigate('LoginScreen')
+            }
+          ]
+        );
+      } else {
+        const errorMessage = jsonData.message || 
+                           Object.values(jsonData).join('\n') ||
+                           'Une erreur est survenue lors de l\'inscription';
+        Alert.alert('Erreur', errorMessage);
+      }
+    } catch (error) {
+      console.log('Erreur lors de l\'inscription:', error);
       Alert.alert(
-        'Inscription réussie',
-        'Votre compte a été créé avec succès',
-        [
-          {
-            text: 'Continuer',
-            onPress: () => navigation.navigate('LoginScreen')
-          }
-        ]
+        'Erreur de connexion',
+        'Impossible de communiquer avec le serveur. Veuillez vérifier votre connexion internet.'
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  };
+
+  const updateFormData = (key, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
 
   return (
@@ -158,14 +244,26 @@ const SupplierSignUpScreen = ({ navigation }) => {
               <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Créer un compte fournisseur</Text>
-            
           </View>
 
           <View style={styles.formContainer}>
             <TextInput
+              label="Nom d'utilisateur"
+              value={formData.username}
+              onChangeText={(value) => updateFormData('username', value)}
+              style={styles.input}
+              mode="outlined"
+              theme={{
+                colors: { primary: '#1E4D92', placeholder: '#666' },
+                roundness: 12,
+              }}
+              left={<TextInput.Icon icon="account" color="#666" />}
+            />
+
+            <TextInput
               label="Nom de l'entreprise"
-              value={companyName}
-              onChangeText={setCompanyName}
+              value={formData.company_name}
+              onChangeText={(value) => updateFormData('company_name', value)}
               style={styles.input}
               mode="outlined"
               theme={{
@@ -177,8 +275,8 @@ const SupplierSignUpScreen = ({ navigation }) => {
 
             <TextInput
               label="Numéro SIRET"
-              value={siret}
-              onChangeText={setSiret}
+              value={formData.company_tax_id}
+              onChangeText={(value) => updateFormData('company_tax_id', value)}
               style={styles.input}
               keyboardType="number-pad"
               mode="outlined"
@@ -191,23 +289,38 @@ const SupplierSignUpScreen = ({ navigation }) => {
             />
 
             <TextInput
-              label="Type de surface"
-              value={surfaceType}
-              onChangeText={setSurfaceType}
+              label="Téléphone"
+              value={formData.phone_number}
+              onChangeText={(value) => updateFormData('phone_number', value)}
               style={styles.input}
+              keyboardType="phone-pad"
               mode="outlined"
               theme={{
                 colors: { primary: '#1E4D92', placeholder: '#666' },
                 roundness: 12,
               }}
-              left={<TextInput.Icon icon="floor-plan" color="#666" />}
+              left={<TextInput.Icon icon="phone" color="#666" />}
+            />
+
+            <TextInput
+              label="Site web"
+              value={formData.website}
+              onChangeText={(value) => updateFormData('website', value)}
+              style={styles.input}
+              keyboardType="url"
+              mode="outlined"
+              theme={{
+                colors: { primary: '#1E4D92', placeholder: '#666' },
+                roundness: 12,
+              }}
+              left={<TextInput.Icon icon="web" color="#666" />}
             />
 
             <View style={styles.locationContainer}>
               <TextInput
-                label="Localisation"
-                value={location}
-                onChangeText={setLocation}
+                label="Adresse"
+                value={formData.business_address}
+                onChangeText={(value) => updateFormData('business_address', value)}
                 style={[styles.input, styles.locationInput]}
                 mode="outlined"
                 theme={{
@@ -231,19 +344,14 @@ const SupplierSignUpScreen = ({ navigation }) => {
 
             <TextInput
               label="Email professionnel"
-              value={email}
-              onChangeText={setEmail}
+              value={formData.email}
+              onChangeText={(value) => updateFormData('email', value)}
               style={styles.input}
               keyboardType="email-address"
               autoCapitalize="none"
               mode="outlined"
-              error={email.length > 0 && !validateEmail(email)}
               theme={{
-                colors: { 
-                  primary: '#1E4D92',
-                  error: '#FF6B6B',
-                  placeholder: '#666',
-                },
+                colors: { primary: '#1E4D92', placeholder: '#666' },
                 roundness: 12,
               }}
               left={<TextInput.Icon icon="email" color="#666" />}
@@ -251,8 +359,8 @@ const SupplierSignUpScreen = ({ navigation }) => {
 
             <TextInput
               label="Mot de passe"
-              value={password}
-              onChangeText={setPassword}
+              value={formData.password}
+              onChangeText={(value) => updateFormData('password', value)}
               style={styles.input}
               secureTextEntry={!isPasswordVisible}
               mode="outlined"
@@ -272,8 +380,8 @@ const SupplierSignUpScreen = ({ navigation }) => {
 
             <TextInput
               label="Confirmer le mot de passe"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              value={formData.confirmPassword}
+              onChangeText={(value) => updateFormData('confirmPassword', value)}
               style={styles.input}
               secureTextEntry={!isConfirmPasswordVisible}
               mode="outlined"
@@ -291,9 +399,20 @@ const SupplierSignUpScreen = ({ navigation }) => {
               }
             />
 
+            <TouchableOpacity
+              style={styles.imagePickerButton}
+              onPress={pickImage}
+            >
+              <MaterialCommunityIcons name="camera" size={24} color="#1E4D92" />
+              <Text style={styles.imagePickerText}>
+                {formData.image ? 'Changer la photo' : 'Ajouter une photo'}
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity 
               style={styles.signUpButton}
               onPress={handleSignUp}
+              disabled={isSubmitting}
               activeOpacity={0.8}
             >
               <LinearGradient
@@ -302,8 +421,14 @@ const SupplierSignUpScreen = ({ navigation }) => {
                 end={{ x: 1, y: 0 }}
                 style={styles.gradientButton}
               >
-                <Text style={styles.signUpButtonText}>Créer mon compte</Text>
-                <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Text style={styles.signUpButtonText}>Créer mon compte</Text>
+                    <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
+                  </>
+                )}
               </LinearGradient>
             </TouchableOpacity>
 
@@ -392,6 +517,24 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
+  },
+  imagePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    marginBottom: 16,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1E4D92',
+    borderStyle: 'dashed',
+  },
+  imagePickerText: {
+    marginLeft: 8,
+    color: '#1E4D92',
+    fontSize: 14,
+    fontWeight: '500',
   },
   signUpButton: {
     marginTop: 8,

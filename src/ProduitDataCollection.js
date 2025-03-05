@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -18,15 +19,26 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const ProduitDataCollection = ({ navigation }) => {
   const [formData, setFormData] = useState({
-    nom: '',
-    categorie: '',
-    prix: '',
+    name: '',
+    category: '',
+    price: '',
+    frequence:'',
     image: null,
-    prixHistorique: [],
-    quantiteStock: '',
-    certification: [],
-    frequenceReapprovisionnement: ''
+    stock: '',
+    reorder_frequency: '',
+    supplier: ''
   });
+
+  const typeFrequence = [
+    'Journalière',
+    'Hebdomadaire',
+    'Mensuelle',
+    'Annuelle',
+  ];
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [suppliers, setSuppliers] = useState([]);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(true);
 
   const categoriesProduits = [
     'Alimentation',
@@ -34,25 +46,46 @@ const ProduitDataCollection = ({ navigation }) => {
     'Électronique',
     'Cosmétique',
     'Mobilier',
+    'Construction',
     'Autre'
   ];
 
-  const certifications = [
-    'Bio',
-    'Local',
-    'Importé',
-    'Commerce équitable',
-    'Label qualité'
-  ];
-
-  const requestMediaLibraryPermission = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission refusée', 'Nous avons besoin de votre permission pour accéder à la galerie.');
-    }
-  };
-
-  React.useEffect(() => {
+  useEffect(() => {
+    // Définition de la fonction pour demander les permissions
+    const requestMediaLibraryPermission = async () => {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission refusée', 'Nous avons besoin de votre permission pour accéder à la galerie.');
+      }
+    };
+  
+    // Récupération de la liste des fournisseurs
+    const fetchSuppliers = async () => {
+      try {
+        // Utilisons le même endpoint que celui utilisé pour l'enregistrement du produit
+        const response = await fetch('https://supply-3.onrender.com/api/suppliername/');
+        if (!response.ok) {
+          throw new Error('Erreur lors de la récupération des fournisseurs');
+        }
+        const data = await response.json();
+        setSuppliers(data);
+        
+        // Si nous avons des fournisseurs, utilisons l'ID du premier comme valeur par défaut
+        if (data.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            supplier: data[0].id
+          }));
+        }
+      } catch (error) {
+        Alert.alert('Erreur', 'Impossible de charger la liste des fournisseurs');
+        console.error(error);
+      } finally {
+        setLoadingSuppliers(false);
+      }
+    };
+  
+    fetchSuppliers();
     requestMediaLibraryPermission();
   }, []);
 
@@ -76,6 +109,72 @@ const ProduitDataCollection = ({ navigation }) => {
     }
   };
 
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.category || !formData.price || !formData.stock || !formData.reorder_frequency) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Création du FormData pour l'envoi de l'image
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('price', formData.price);
+      formDataToSend.append('stock', formData.stock);
+      formDataToSend.append('frequence_appr', formData.frequence);
+      formDataToSend.append('reorder_frequency', formData.reorder_frequency);
+      
+      // Assurez-vous que le supplier est envoyé comme une chaîne
+      console.log('Supplier ID being sent:', formData.supplier);
+      console.log('Type of supplier ID:', typeof formData.supplier);
+      formDataToSend.append('supplier', formData.supplier.toString());
+
+      if (formData.image) {
+        const imageUri = formData.image;
+        const filename = imageUri.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image';
+
+        formDataToSend.append('image', {
+          uri: imageUri,
+          name: filename,
+          type
+        });
+      }
+
+      const response = await fetch('https://supply-3.onrender.com/api/productscollecte/', {
+        method: 'POST',
+        body: formDataToSend,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error('Server response:', errorData);
+        
+        // Afficher un message d'erreur plus spécifique si c'est un problème de fournisseur
+        if (errorData && errorData.supplier) {
+          throw new Error(`Erreur avec le fournisseur : ${errorData.supplier.join(', ')}`);
+        }
+        
+        throw new Error('Erreur lors de l\'envoi des données');
+      }
+
+      const data = await response.json();
+      Alert.alert('Succès', 'Le produit a été enregistré avec succès');
+      navigation.navigate("HomeDashboard");
+    } catch (error) {
+      Alert.alert('Erreur', error.message || 'Une erreur est survenue lors de l\'enregistrement');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const ImageSelector = ({ image }) => (
     <View style={styles.imageContainer}>
       <Text style={styles.inputLabel}>Image du produit</Text>
@@ -94,6 +193,20 @@ const ProduitDataCollection = ({ navigation }) => {
       </TouchableOpacity>
     </View>
   );
+
+  // Fonction corrigée pour gérer le changement de fournisseur
+  const handleSupplierChange = (supplierId) => {
+    // Assurer que supplierId est un nombre
+    const id = typeof supplierId === 'string' ? parseInt(supplierId, 10) : supplierId;
+    
+    console.log('Selected supplier ID:', id);
+    console.log('Type after conversion:', typeof id);
+    
+    setFormData(prev => ({
+      ...prev,
+      supplier: id
+    }));
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -135,8 +248,8 @@ const ProduitDataCollection = ({ navigation }) => {
               <Text style={styles.inputLabel}>Nom du produit</Text>
               <TextInput
                 style={styles.input}
-                value={formData.nom}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, nom: text }))}
+                value={formData.name}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
                 placeholder="Entrez le nom du produit"
                 placeholderTextColor="#999"
               />
@@ -145,9 +258,9 @@ const ProduitDataCollection = ({ navigation }) => {
             <View style={styles.pickerContainer}>
               <Text style={styles.inputLabel}>Catégorie</Text>
               <Picker
-                selectedValue={formData.categorie}
+                selectedValue={formData.category}
                 style={styles.picker}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, categorie: value }))}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
               >
                 <Picker.Item label="Sélectionnez la catégorie" value="" />
                 {categoriesProduits.map((cat) => (
@@ -156,12 +269,37 @@ const ProduitDataCollection = ({ navigation }) => {
               </Picker>
             </View>
 
+            {/* Sélecteur de fournisseur */}
+            <View style={styles.pickerContainer}>
+              <Text style={styles.inputLabel}>Fournisseur</Text>
+              {loadingSuppliers ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#1E3A8A" />
+                  <Text style={styles.loadingText}>Chargement des fournisseurs...</Text>
+                </View>
+              ) : (
+                <Picker
+                  selectedValue={formData.supplier}
+                  style={styles.picker}
+                  onValueChange={handleSupplierChange}
+                >
+                  {suppliers.map((supplier) => (
+                    <Picker.Item 
+                      key={supplier.id} 
+                      label={supplier.name || supplier.nom || `Fournisseur ${supplier.id}`} 
+                      value={supplier.id}
+                    />
+                  ))}
+                </Picker>
+              )}
+            </View>
+
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Prix actuel (FCFA)</Text>
               <TextInput
                 style={styles.input}
-                value={formData.prix}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, prix: text }))}
+                value={formData.price}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, price: text }))}
                 placeholder="Prix du produit"
                 keyboardType="numeric"
                 placeholderTextColor="#999"
@@ -172,39 +310,22 @@ const ProduitDataCollection = ({ navigation }) => {
               <Text style={styles.inputLabel}>Quantité en stock</Text>
               <TextInput
                 style={styles.input}
-                value={formData.quantiteStock}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, quantiteStock: text }))}
+                value={formData.stock}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, stock: text }))}
                 placeholder="Quantité disponible"
                 keyboardType="numeric"
                 placeholderTextColor="#999"
               />
             </View>
 
-            <View style={styles.pickerContainer}>
-              <Text style={styles.inputLabel}>Certifications</Text>
-              <Picker
-                selectedValue={formData.certification[0]} // Simple version - only one certification
-                style={styles.picker}
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  certification: [value]
-                }))}
-              >
-                <Picker.Item label="Sélectionnez une certification" value="" />
-                {certifications.map((cert) => (
-                  <Picker.Item key={cert} label={cert} value={cert} />
-                ))}
-              </Picker>
-            </View>
-
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Fréquence de réapprovisionnement (jours)</Text>
               <TextInput
                 style={styles.input}
-                value={formData.frequenceReapprovisionnement}
+                value={formData.reorder_frequency}
                 onChangeText={(text) => setFormData(prev => ({ 
                   ...prev, 
-                  frequenceReapprovisionnement: text 
+                  reorder_frequency: text 
                 }))}
                 placeholder="Nombre de jours entre les approvisionnements"
                 keyboardType="numeric"
@@ -212,11 +333,30 @@ const ProduitDataCollection = ({ navigation }) => {
               />
             </View>
 
+            <View style={styles.pickerContainer}>
+              <Text style={styles.inputLabel}>Frequence d'approvisionnement</Text>
+              <Picker
+                selectedValue={formData.frequence}
+                style={styles.picker}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, frequence: value }))}
+              >
+                <Picker.Item label="Sélectionnez la fréquence" value="" />
+                {typeFrequence.map((frequence) => (
+                  <Picker.Item key={frequence} label={frequence} value={frequence} />
+                ))}
+              </Picker>
+            </View>
+
             <TouchableOpacity 
-              style={styles.submitButton}
-              onPress={() => navigation.navigate("CommercialDataRecap")}
+              style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+              onPress={handleSubmit}
+              disabled={isLoading}
             >
-              <Text style={styles.submitButtonText}>Enregistrer le produit</Text>
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>Enregistrer le produit</Text>
+              )}
             </TouchableOpacity>
           </LinearGradient>
         </View>
@@ -333,10 +473,26 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
+  submitButtonDisabled: {
+    backgroundColor: '#999',
+  },
   submitButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  loadingText: {
+    marginLeft: 10,
+    color: '#666',
   }
 });
 

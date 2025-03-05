@@ -1,168 +1,56 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  TouchableOpacity, 
-  Image, 
-  Modal, 
-  ScrollView,
-  StyleSheet 
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Image, Modal, ScrollView, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const OrderHistory = () => {
-  const [orders] = useState([
-    {
-      id: '1',
-      date: '2024-03-15',
-      totalAmount: 4500,
-      status: 'Livré',
-      items: [
-        {
-          id: '1',
-          name: 'Lait demi-écrémé',
-          quantity: 2,
-          price: 1500,
-          format: 'Moyen (50cl)',
-          image: require('../assets/chocolat.jpeg')
-        },
-        {
-          id: '2',
-          name: 'iPhone 12',
-          quantity: 1,
-          price: 1500,
-          format: 'Noir 64Go',
-          image: require('../assets/iphone.jpg')
-        }
-      ]
-    },
-    {
-      id: '2',
-      date: '2024-02-20',
-      totalAmount: 3000,
-      status: 'En cours',
-      items: [
-        {
-          id: '1',
-          name: 'Bouteille de vin',
-          quantity: 1,
-          price: 3000,
-          format: 'Grand format',
-          image: require('../assets/chocolat.jpeg')
-        },
-        {
-          id: '2',
-          name: 'iPhone 12',
-          quantity: 1,
-          price: 1500,
-          format: 'Noir 64Go',
-          image: require('../assets/iphone.jpg')
-        }
-      ]
-    },
-    {
-      id: '3',
-      date: '2024-02-20',
-      totalAmount: 3000,
-      status: 'En cours',
-      items: [
-        {
-          id: '1',
-          name: 'Bouteille de vin',
-          quantity: 1,
-          price: 3000,
-          format: 'Grand format',
-          image: require('../assets/iphone.jpg')
-        },
-        {
-          id: '2',
-          name: 'iPhone 12',
-          quantity: 1,
-          price: 1500,
-          format: 'Noir 64Go',
-          image: require('../assets/chocolat.jpeg')
-        }
-      ]
-    },
-    {
-      id: '4',
-      date: '2024-02-20',
-      totalAmount: 3000,
-      status: 'En cours',
-      items: [
-        {
-          id: '1',
-          name: 'Bouteille de vin',
-          quantity: 1,
-          price: 3000,
-          format: 'Grand format',
-          image: require('../assets/chocolat.jpeg')
-        },
-        {
-          id: '2',
-          name: 'iPhone 12',
-          quantity: 1,
-          price: 1500,
-          format: 'Noir 64Go',
-          image: require('../assets/iphone.jpg')
-        }
-      ]
-    },
-    {
-      id: '5',
-      date: '2024-02-20',
-      totalAmount: 3000,
-      status: 'En cours',
-      items: [
-        {
-          id: '1',
-          name: 'Bouteille de vin',
-          quantity: 1,
-          price: 3000,
-          format: 'Grand format',
-          image: require('../assets/iphone.jpg')
-        },
-        {
-          id: '2',
-          name: 'iPhone 12',
-          quantity: 1,
-          price: 1500,
-          format: 'Noir 64Go',
-          image: require('../assets/chocolat.jpeg')
-        }
-      ]
-    }
-  ]);
-
+  const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderDetailsModal, setOrderDetailsModal] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState('Tous');
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [loading, setLoading] = useState(true);
 
-  const orderStatuses = ['Tous', 'En cours', 'Livré', 'Annulé'];
+  const orderStatuses = ['ALL', 'PENDING', 'DELIVERED', 'CANCELLED'];
 
-  const filteredOrders = selectedStatus === 'Tous' 
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch('https://supply-3.onrender.com/api/orders/');
+      const data = await response.json();
+      setOrders(data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setLoading(false);
+    }
+  };
+
+  const filteredOrders = selectedStatus === 'ALL' 
     ? orders 
     : orders.filter(order => order.status === selectedStatus);
 
+  const calculateOrderTotal = (items) => {
+    return items.reduce((total, item) => {
+      return total + (parseFloat(item.price_at_order) * item.quantity);
+    }, 0);
+  };
+
   const renderStatusFilter = (status) => (
     <TouchableOpacity 
-      style={{
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        borderRadius: 20,
-        marginRight: 10,
-        backgroundColor: selectedStatus === status ? '#3B82F6' : '#F5F5F5'
-      }}
+      key={status}
+      style={[
+        styles.statusFilter,
+        { backgroundColor: selectedStatus === status ? '#3B82F6' : '#F5F5F5' }
+      ]}
       onPress={() => setSelectedStatus(status)}
     >
-      <Text 
-        style={{
-          fontWeight: 'bold',
-          color: selectedStatus === status ? 'white' : 'black'
-        }}
-      >
+      <Text style={{
+        color: selectedStatus === status ? 'white' : 'black',
+        fontWeight: 'bold'
+      }}>
         {status}
       </Text>
     </TouchableOpacity>
@@ -187,19 +75,14 @@ const OrderHistory = () => {
               <Icon name="close" size={24} color="#3B82F6" />
             </TouchableOpacity>
             
-            <Text style={styles.modalOrderTitle}>
-              Détails de la commande
-            </Text>
-            
-            <Text style={styles.modalOrderId}>
-              Commande #{selectedOrder.id}
-            </Text>
+            <Text style={styles.modalOrderTitle}>Détails de la commande</Text>
+            <Text style={styles.modalOrderId}>Commande #{selectedOrder.id}</Text>
             
             <View style={styles.modalOrderInfoContainer}>
               <View style={styles.modalOrderInfoItem}>
                 <Icon name="calendar" size={20} color="#3B82F6" />
                 <Text style={styles.modalOrderInfoText}>
-                  {selectedOrder.date}
+                  {new Date(selectedOrder.created_at).toLocaleDateString()}
                 </Text>
               </View>
               
@@ -213,31 +96,35 @@ const OrderHistory = () => {
 
             <Text style={styles.modalSectionTitle}>Produits</Text>
             
-            {selectedOrder.items.map((item, index) => (
-              <View key={index} style={styles.modalProductItem}>
-                <Image 
-                  source={item.image} 
-                  style={styles.modalProductImage} 
-                />
-                <View style={styles.modalProductDetails}>
-                  <Text style={styles.modalProductName}>{item.name}</Text>
-                  <Text style={styles.modalProductFormat}>{item.format}</Text>
-                  <View style={styles.modalProductPriceContainer}>
-                    <Text style={styles.modalProductPrice}>
-                      {(item.price / 100).toFixed(2)} €
+            <ScrollView>
+              {selectedOrder.items_detail.map((item, index) => (
+                <View key={index} style={styles.modalProductItem}>
+                  <Image 
+                    source={{ uri: item.image }} 
+                    style={styles.modalProductImage}
+                  />
+                  <View style={styles.modalProductDetails}>
+                    <Text style={styles.modalProductName}>{item.product_name}</Text>
+                    <Text style={styles.modalProductFormat}>
+                      {item.category_name} - Taille: {item.taille}
                     </Text>
-                    <Text style={styles.modalProductQuantity}>
-                      Qté: {item.quantity}
-                    </Text>
+                    <View style={styles.modalProductPriceContainer}>
+                      <Text style={styles.modalProductPrice}>
+                        {parseFloat(item.price_at_order).toLocaleString()} FCFA
+                      </Text>
+                      <Text style={styles.modalProductQuantity}>
+                        Qté: {item.quantity}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            ))}
+              ))}
+            </ScrollView>
 
             <View style={styles.modalTotalContainer}>
               <Text style={styles.modalTotalLabel}>Total</Text>
               <Text style={styles.modalTotalAmount}>
-                {(selectedOrder.totalAmount / 100).toFixed(2)} €
+                {calculateOrderTotal(selectedOrder.items_detail).toLocaleString()} FCFA
               </Text>
             </View>
           </View>
@@ -258,8 +145,8 @@ const OrderHistory = () => {
         <Text style={styles.orderCardId}>Commande #{item.id}</Text>
         <Text style={[
           styles.orderCardStatus, 
-          item.status === 'Livré' ? styles.deliveredStatus : 
-          item.status === 'En cours' ? styles.pendingStatus : 
+          item.status === 'DELIVERED' ? styles.deliveredStatus : 
+          item.status === 'PENDING' ? styles.pendingStatus : 
           styles.cancelledStatus
         ]}>
           {item.status}
@@ -268,31 +155,41 @@ const OrderHistory = () => {
       
       <View style={styles.orderCardContent}>
         <View style={styles.orderCardImageContainer}>
-          {item.items.slice(0, 2).map((product, index) => (
+          {item.items_detail.slice(0, 2).map((product, index) => (
             <Image 
               key={index}
-              source={product.image} 
+              source={{ uri: product.image }} 
               style={styles.orderCardImage} 
             />
           ))}
-          {item.items.length > 2 && (
+          {item.items_detail.length > 2 && (
             <View style={styles.orderCardImageOverlay}>
               <Text style={styles.orderCardImageOverlayText}>
-                +{item.items.length - 2}
+                +{item.items_detail.length - 2}
               </Text>
             </View>
           )}
         </View>
         
         <View style={styles.orderCardTextContainer}>
-          <Text style={styles.orderCardDate}>{item.date}</Text>
+          <Text style={styles.orderCardDate}>
+            {new Date(item.created_at).toLocaleDateString()}
+          </Text>
           <Text style={styles.orderCardTotal}>
-            Total: {(item.totalAmount / 100).toFixed(2)} €
+            Total: {calculateOrderTotal(item.items_detail).toLocaleString()} FCFA
           </Text>
         </View>
       </View>
     </TouchableOpacity>
   );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Chargement...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -316,15 +213,11 @@ const OrderHistory = () => {
       <FlatList
         data={filteredOrders}
         renderItem={renderOrderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.orderList}
         ListEmptyComponent={
           <View style={styles.emptyListContainer}>
-            <Icon 
-              name="cart-off" 
-              size={100} 
-              color="#E0E0E0" 
-            />
+            <Icon name="cart-off" size={100} color="#E0E0E0" />
             <Text style={styles.emptyListText}>
               Aucune commande trouvée
             </Text>
@@ -341,6 +234,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5'
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   headerGradient: {
     paddingTop: 50,
@@ -360,6 +258,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold'
   },
+  statusFilter: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginRight: 10
+  },
   statusFilterScrollView: {
     marginTop: 10
   },
@@ -370,7 +274,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 15,
     padding: 15,
-    marginBottom: 10
+    marginBottom: 10,
+    elevation: 2
   },
   orderCardHeader: {
     flexDirection: 'row',

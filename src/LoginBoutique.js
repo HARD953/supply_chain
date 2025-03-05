@@ -1,5 +1,4 @@
-// LoginScreen.js
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -19,12 +18,10 @@ import { TextInput } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
-import { useAuth } from './AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
 const LoginScreen = ({ navigation }) => {
-  //const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -33,6 +30,8 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     Keyboard.dismiss();
+
+    // Vérification des champs requis
     if (!email || !password) {
       Alert.alert('Champs requis', 'Veuillez remplir tous les champs pour continuer', [
         { text: 'Compris', style: 'default' },
@@ -40,12 +39,17 @@ const LoginScreen = ({ navigation }) => {
       return;
     }
 
-    // try {
-    //   await login(email, password);
-    //   navigation.navigate('Dashboard');
-    // } catch (error) {
-    //   Alert.alert('Erreur de connexion', error.message || 'Une erreur est survenue');
-    // }
+    // Vérification des identifiants
+    if (
+      (email === 'issa@gmail.com' && password === 'issa01') ||
+      (email === 'romy@gmail.com' && password === 'romy01')
+    ) {
+      // Connexion réussie, naviguer vers le tableau de bord
+      navigation.navigate('Dashboard');
+    } else {
+      // Identifiants incorrects
+      Alert.alert('Erreur de connexion', 'Email ou mot de passe incorrect');
+    }
   };
 
   const validateEmail = (email) => {
@@ -63,9 +67,9 @@ const LoginScreen = ({ navigation }) => {
         end={{ x: 1, y: 1 }}
       />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingView}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -93,8 +97,8 @@ const LoginScreen = ({ navigation }) => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 mode="outlined"
-                onFocus={() => setIsEmailFocused(true)}
-                onBlur={() => setIsEmailFocused(false)}
+                // onFocus={() => setIsEmailFocused(true)}
+                // onBlur={() => setIsEmailFocused(false)}
                 error={email.length > 0 && !validateEmail(email)}
                 theme={{
                   colors: {
@@ -114,8 +118,8 @@ const LoginScreen = ({ navigation }) => {
                 style={[styles.input, isPasswordFocused && styles.inputFocused]}
                 secureTextEntry={!isPasswordVisible}
                 mode="outlined"
-                onFocus={() => setIsPasswordFocused(true)}
-                onBlur={() => setIsPasswordFocused(false)}
+                // onFocus={() => setIsPasswordFocused(true)}
+                // onBlur={() => setIsPasswordFocused(false)}
                 theme={{
                   colors: {
                     primary: '#2563EB',

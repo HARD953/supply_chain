@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Image
 } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+//import { LineChart } from 'react-native-chart-kit';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
@@ -24,15 +24,15 @@ const Dashboard = ({ navigation }) => {
       { name: 'Pain', sales: 38, image: 'https://via.placeholder.com/100' },
       { name: 'Eau', sales: 32, image: 'https://via.placeholder.com/100' }
     ],
-    revenueData: {
-      labels: ['Jan', 'Fev', 'Mar', 'Avr', 'Mai'],
-      datasets: [
-        {
-          data: [500000, 620000, 750000, 680000, 820000]
-        }
-      ]
-    }
-  });
+  //   revenueData: {
+  //     labels: ['Jan', 'Fev', 'Mar', 'Avr', 'Mai'],
+  //     datasets: [
+  //       {
+  //         data: [500000, 620000, 750000, 680000, 820000]
+  //       }
+  //     ]
+  //   }
+   });
 
   const renderHeader = () => (
     <LinearGradient
@@ -138,7 +138,7 @@ const Dashboard = ({ navigation }) => {
         </TouchableOpacity>
       </View>
       <View style={styles.chartContainer}>
-        <LineChart
+        {/* <LineChart
           data={dashboardData.revenueData}
           width={width - 60}
           height={220}
@@ -163,7 +163,7 @@ const Dashboard = ({ navigation }) => {
             marginVertical: 8,
             borderRadius: 16
           }}
-        />
+        /> */}
       </View>
     </View>
   );

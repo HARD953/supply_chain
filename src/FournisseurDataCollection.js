@@ -10,11 +10,14 @@ import {
   Platform,
   KeyboardAvoidingView,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+
+const API_URL = 'https://supply-3.onrender.com/api/fournisseurs';
 
 const FournisseurDataCollection = ({ navigation }) => {
   const [formData, setFormData] = useState({
@@ -26,17 +29,17 @@ const FournisseurDataCollection = ({ navigation }) => {
       email: '',
       adresse: ''
     },
-    produitsFournis: [],
     delaiLivraison: '',
     frequenceCommandes: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const typesFournisseur = [
-    'Grossiste',
-    'Fabricant',
-    'Importateur',
-    'Distributeur local',
-    'Producteur agricole'
+    { label: 'Grossiste', value: 'WHOLESALER' },
+    { label: 'Fabricant', value: 'MANUFACTURER' },
+    { label: 'Importateur', value: 'IMPORTER' },
+    { label: 'Distributeur local', value: 'LOCAL_DISTRIBUTOR' },
+    { label: 'Producteur agricole', value: 'AGRICULTURAL_PRODUCER' }
   ];
 
   const requestMediaLibraryPermission = async () => {
@@ -67,6 +70,93 @@ const FournisseurDataCollection = ({ navigation }) => {
       }
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de charger l\'image');
+    }
+  };
+
+  const validateForm = () => {
+    if (!formData.nom) {
+      Alert.alert('Erreur', 'Le nom du fournisseur est requis');
+      return false;
+    }
+    if (!formData.type) {
+      Alert.alert('Erreur', 'Le type de fournisseur est requis');
+      return false;
+    }
+    if (!formData.coordonnees.telephone) {
+      Alert.alert('Erreur', 'Le numéro de téléphone est requis');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+
+    try {
+      // Préparer les données pour l'API
+      const formDataToSend = new FormData();
+      
+      if (formData.image) {
+        const imageFileName = formData.image.split('/').pop();
+        const match = /\.(\w+)$/.exec(imageFileName);
+        const imageType = match ? `image/${match[1]}` : 'image';
+        
+        formDataToSend.append('image', {
+          uri: formData.image,
+          name: imageFileName,
+          type: imageType
+        });
+      }
+
+      const apiData = {
+        name: formData.nom,
+        type: formData.type,
+        delivery_time: parseInt(formData.delaiLivraison) || 0,
+        order_frequency: formData.frequenceCommandes,
+        contact: {
+          phone: formData.coordonnees.telephone,
+          email: formData.coordonnees.email,
+          address: formData.coordonnees.adresse
+        }
+      };
+
+      // Ajouter les données JSON à FormData
+      formDataToSend.append('data', JSON.stringify(apiData));
+
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
+        },
+        body: formDataToSend
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      Alert.alert(
+        'Succès',
+        'Le fournisseur a été enregistré avec succès',
+        [
+          { 
+            text: 'OK', 
+            onPress: () => navigation.navigate("CommercialDataRecap") 
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error:', error);
+      Alert.alert(
+        'Erreur',
+        'Une erreur est survenue lors de l\'enregistrement du fournisseur'
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -145,7 +235,7 @@ const FournisseurDataCollection = ({ navigation }) => {
               >
                 <Picker.Item label="Sélectionnez le type" value="" />
                 {typesFournisseur.map((type) => (
-                  <Picker.Item key={type} label={type} value={type} />
+                  <Picker.Item key={type.value} label={type.label} value={type.value} />
                 ))}
               </Picker>
             </View>
@@ -228,10 +318,15 @@ const FournisseurDataCollection = ({ navigation }) => {
             </View>
 
             <TouchableOpacity 
-              style={styles.submitButton}
-              onPress={() => navigation.navigate("CommercialDataRecap")}
+              style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+              onPress={handleSubmit}
+              disabled={isLoading}
             >
-              <Text style={styles.submitButtonText}>Enregistrer le fournisseur</Text>
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>Enregistrer le fournisseur</Text>
+              )}
             </TouchableOpacity>
           </LinearGradient>
         </View>
@@ -354,6 +449,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
   },
   submitButtonText: {
     color: '#fff',

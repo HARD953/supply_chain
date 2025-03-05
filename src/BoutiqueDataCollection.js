@@ -27,8 +27,11 @@ const BoutiqueDataCollection = ({ navigation }) => {
     nom: '',
     type: '',
     adresse: '',
+    categories:'',
     latitude: '',
     longitude: '',
+    taille: '',
+    frequence: '',
     image: null,
     estBrander: false,
     marque: '',
@@ -42,21 +45,36 @@ const BoutiqueDataCollection = ({ navigation }) => {
 
   const typeCommerces = [
     'Boutique',
-    'Supérette',
-    'Supermarché',
+    'Supérette'
+  ];
+
+  const Categories = [
     'Grossiste',
-    'Demi-grossiste'
+    'Semi-grossiste',
+    'Détaillant',
+    'Mixte'
+  ];
+
+  const typeTaille = [
+    'Petite',
+    'Moyenne',
+    'Grande',
+  ];
+
+  const typeFrequence = [
+    'Journalière',
+    'Hebdomadaire',
+    'Mensuelle',
+    'Annuelle',
   ];
 
   const genres = [
     'Homme',
-    'Femme',
-    'Autre',
-    'Préfère ne pas préciser'
+    'Femme'
   ];
 
   useEffect(() => {
-    requestLocationPermission();
+    //requestLocationPermission();
     requestMediaLibraryPermission();
   }, []);
 
@@ -105,6 +123,81 @@ const BoutiqueDataCollection = ({ navigation }) => {
       }
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de charger l\'image');
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      
+      // Validation des champs requis
+      if (!formData.nom || !formData.type || !formData.adresse || !formData.proprietaire.nom) {
+        Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires');
+        return;
+      }
+  
+      // Création du FormData
+      const formDataToSend = new FormData();
+  
+      // Ajout de l'image si elle existe
+      if (formData.image) {
+        const filename = formData.image.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+  
+        formDataToSend.append('image', {
+          uri: formData.image,
+          name: filename || 'image.jpg',
+          type
+        });
+      }
+  
+      // Conversion des données en format string pour l'API
+      formDataToSend.append('name', formData.nom);
+      formDataToSend.append('typecommerce', formData.type.toUpperCase());
+      formDataToSend.append('type', formData.estBrander ? 'BRANDED' : 'NON_BRANDED');
+      formDataToSend.append('categorie',formData.categories);
+      formDataToSend.append('brand', formData.marque || '');
+      formDataToSend.append('address', formData.adresse);
+      formDataToSend.append('taille', formData.taille);
+      formDataToSend.append('frequence_appr', formData.frequence);
+      formDataToSend.append('latitude', formData.latitude || '0');
+      formDataToSend.append('longitude', formData.longitude || '0');
+      formDataToSend.append('owner_name', formData.proprietaire.nom);
+      formDataToSend.append('owner_gender', 
+        formData.proprietaire.genre === 'Homme' ? 'Male' : 
+        formData.proprietaire.genre === 'Femme' ? 'Female' : 'Other'
+      );
+      formDataToSend.append('owner_phone', formData.proprietaire.telephone);
+      formDataToSend.append('owner_email', formData.proprietaire.email);
+  
+      console.log('FormData being sent:', formDataToSend); // Pour le débogage
+  
+      const response = await fetch('https://supply-3.onrender.com/api/shops/', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'multipart/form-data',
+        },
+        body: formDataToSend
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Server response:', errorData); // Pour le débogage
+        throw new Error('Erreur lors de l\'enregistrement');
+      }
+  
+      const result = await response.json();
+      console.log('Success response:', result); // Pour le débogage
+      Alert.alert('Succès', 'La boutique a été enregistrée avec succès');
+      navigation.navigate("HomeDashboard");
+  
+    } catch (error) {
+      console.error('Error details:', error); // Pour le débogage
+      Alert.alert('Erreur', error.message || 'Une erreur est survenue lors de l\'enregistrement');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -159,12 +252,12 @@ const BoutiqueDataCollection = ({ navigation }) => {
             colors={['#ffffff', '#f8f8f8']}
             style={styles.gradientCard}
           >
-            <Text style={styles.sectionTitle}>Informations de la boutique</Text>
+            <Text style={styles.sectionTitle}>Informations sur le site</Text>
             
             <ImageSelector image={formData.image} />
   
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Nom de la boutique</Text>
+              <Text style={styles.inputLabel}>Raison sociale</Text>
               <TextInput
                 style={styles.input}
                 value={formData.nom}
@@ -187,6 +280,49 @@ const BoutiqueDataCollection = ({ navigation }) => {
                 ))}
               </Picker>
             </View>
+
+            <View style={styles.pickerContainer}>
+              <Text style={styles.inputLabel}>Catégories</Text>
+              <Picker
+                selectedValue={formData.type}
+                style={styles.picker}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, categories: value }))}
+              >
+                <Picker.Item label="Sélectionnez le type" value="" />
+                {Categories.map((categories) => (
+                  <Picker.Item key={categories} label={categories} value={categories} />
+                ))}
+              </Picker>
+            </View>
+
+            <View style={styles.pickerContainer}>
+              <Text style={styles.inputLabel}>Taille de la surface</Text>
+              <Picker
+                selectedValue={formData.taille}
+                style={styles.picker}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, taille: value }))}
+              >
+                <Picker.Item label="Sélectionnez le type" value="" />
+                {typeTaille.map((taille) => (
+                  <Picker.Item key={taille} label={taille} value={taille} />
+                ))}
+              </Picker>
+            </View>
+
+            <View style={styles.pickerContainer}>
+              <Text style={styles.inputLabel}>Frequence d'approvisionnement</Text>
+              <Picker
+                selectedValue={formData.frequence}
+                style={styles.picker}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, frequence: value }))}
+              >
+                <Picker.Item label="Sélectionnez le type" value="" />
+                {typeFrequence.map((frequence) => (
+                  <Picker.Item key={frequence} label={frequence} value={frequence} />
+                ))}
+              </Picker>
+            </View>
+  
   
             <View style={styles.switchContainer}>
               <Text style={styles.inputLabel}>Boutique brandée</Text>
@@ -323,9 +459,14 @@ const BoutiqueDataCollection = ({ navigation }) => {
   
             <TouchableOpacity 
               style={styles.submitButton}
-              onPress={() => navigation.navigate("CommercialDataRecap")}
+              onPress={handleSubmit}
+              disabled={loading}
             >
-              <Text style={styles.submitButtonText}>Enregistrer la boutique</Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>Enregistrer la boutique</Text>
+              )}
             </TouchableOpacity>
           </LinearGradient>
         </View>
