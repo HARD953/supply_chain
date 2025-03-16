@@ -2,34 +2,58 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, Modal, ScrollView, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import api from './api'; // Importez votre instance axios configurée
+import { useAuth } from './AuthContext'; // Importez le contexte d'authentification
 
-const OrderHistory = () => {
+const BASE_MEDIA_URL = 'https://supply-3.onrender.com/media/'; // URL de base pour les médias
+
+const OrderHistory = ({ navigation }) => {
+  const { accessToken, logout } = useAuth(); // Récupérez le token et la fonction de déconnexion
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderDetailsModal, setOrderDetailsModal] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const orderStatuses = ['ALL', 'PENDING', 'DELIVERED', 'CANCELLED'];
+  const orderStatuses = ['ALL', 'PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED'];
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [accessToken]); // Ajoutez accessToken comme dépendance
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('https://supply-3.onrender.com/api/orders/');
-      const data = await response.json();
-      setOrders(data);
+      if (!accessToken) {
+        throw new Error('Utilisateur non authentifié');
+      }
+      setLoading(true);
+      const response = await api.get('/orders/', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      // Ajouter l'URL complète aux images si elles sont relatives
+      const ordersWithFullImageUrls = response.data.map(order => ({
+        ...order,
+        items_detail: order.items_detail.map(item => ({
+          ...item,
+          image: item.image.startsWith('http') ? item.image : `${BASE_MEDIA_URL}${item.image}`
+        }))
+      }));
+      setOrders(ordersWithFullImageUrls);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching orders:', error);
+      setError(error.response?.data?.detail || 'Erreur lors du chargement des commandes');
+      if (error.response?.status === 401) {
+        logout(); // Déconnexion si non autorisé
+        navigation.navigate('Login'); // Redirection vers la page de connexion
+      }
       setLoading(false);
     }
   };
 
-  const filteredOrders = selectedStatus === 'ALL' 
-    ? orders 
+  const filteredOrders = selectedStatus === 'ALL'
+    ? orders
     : orders.filter(order => order.status === selectedStatus);
 
   const calculateOrderTotal = (items) => {
@@ -39,7 +63,7 @@ const OrderHistory = () => {
   };
 
   const renderStatusFilter = (status) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       key={status}
       style={[
         styles.statusFilter,
@@ -68,16 +92,16 @@ const OrderHistory = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setOrderDetailsModal(false)}
             >
               <Icon name="close" size={24} color="#3B82F6" />
             </TouchableOpacity>
-            
+
             <Text style={styles.modalOrderTitle}>Détails de la commande</Text>
             <Text style={styles.modalOrderId}>Commande #{selectedOrder.id}</Text>
-            
+
             <View style={styles.modalOrderInfoContainer}>
               <View style={styles.modalOrderInfoItem}>
                 <Icon name="calendar" size={20} color="#3B82F6" />
@@ -85,7 +109,7 @@ const OrderHistory = () => {
                   {new Date(selectedOrder.created_at).toLocaleDateString()}
                 </Text>
               </View>
-              
+
               <View style={styles.modalOrderInfoItem}>
                 <Icon name="check-circle" size={20} color="#3B82F6" />
                 <Text style={styles.modalOrderInfoText}>
@@ -95,12 +119,12 @@ const OrderHistory = () => {
             </View>
 
             <Text style={styles.modalSectionTitle}>Produits</Text>
-            
+
             <ScrollView>
               {selectedOrder.items_detail.map((item, index) => (
                 <View key={index} style={styles.modalProductItem}>
-                  <Image 
-                    source={{ uri: item.image }} 
+                  <Image
+                    source={{ uri: item.image }}
                     style={styles.modalProductImage}
                   />
                   <View style={styles.modalProductDetails}>
@@ -134,7 +158,7 @@ const OrderHistory = () => {
   };
 
   const renderOrderItem = ({ item }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.orderCard}
       onPress={() => {
         setSelectedOrder(item);
@@ -144,22 +168,22 @@ const OrderHistory = () => {
       <View style={styles.orderCardHeader}>
         <Text style={styles.orderCardId}>Commande #{item.id}</Text>
         <Text style={[
-          styles.orderCardStatus, 
-          item.status === 'DELIVERED' ? styles.deliveredStatus : 
-          item.status === 'PENDING' ? styles.pendingStatus : 
-          styles.cancelledStatus
+          styles.orderCardStatus,
+          item.status === 'COMPLETED' ? styles.deliveredStatus : // Changé DELIVERED à COMPLETED
+          item.status === 'PENDING' ? styles.pendingStatus :
+          item.status === 'CANCELLED' ? styles.cancelledStatus : styles.processingStatus // Ajouté PROCESSING
         ]}>
           {item.status}
         </Text>
       </View>
-      
+
       <View style={styles.orderCardContent}>
         <View style={styles.orderCardImageContainer}>
           {item.items_detail.slice(0, 2).map((product, index) => (
-            <Image 
+            <Image
               key={index}
-              source={{ uri: product.image }} 
-              style={styles.orderCardImage} 
+              source={{ uri: product.image }}
+              style={styles.orderCardImage}
             />
           ))}
           {item.items_detail.length > 2 && (
@@ -170,7 +194,7 @@ const OrderHistory = () => {
             </View>
           )}
         </View>
-        
+
         <View style={styles.orderCardTextContainer}>
           <Text style={styles.orderCardDate}>
             {new Date(item.created_at).toLocaleDateString()}
@@ -191,19 +215,30 @@ const OrderHistory = () => {
     );
   }
 
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Erreur : {error}</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.retryText}>Se reconnecter</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <LinearGradient 
-        colors={['#1E40AF', '#3B82F6']} 
+      <LinearGradient
+        colors={['#1E40AF', '#3B82F6']}
         style={styles.headerGradient}
       >
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Historique des commandes</Text>
         </View>
 
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
           style={styles.statusFilterScrollView}
         >
           {orderStatuses.map(renderStatusFilter)}
@@ -239,6 +274,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center'
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    marginBottom: 10
+  },
+  retryText: {
+    color: '#007AFF',
+    fontSize: 16
   },
   headerGradient: {
     paddingTop: 50,
@@ -303,6 +352,10 @@ const styles = StyleSheet.create({
   cancelledStatus: {
     backgroundColor: '#FFEBEE',
     color: '#F44336'
+  },
+  processingStatus: {
+    backgroundColor: '#E3F2FD',
+    color: '#1E88E5'
   },
   orderCardContent: {
     flexDirection: 'row',

@@ -11,35 +11,40 @@ import {
   Dimensions,
   StatusBar,
   ScrollView,
-  Keyboard
+  Keyboard,
 } from 'react-native';
 import { TextInput, ActivityIndicator } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker'; // Ajout du Picker
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
+import axios from 'axios';
 
 const { width, height } = Dimensions.get('window');
 
 const SupplierSignUpScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
     username: '',
+    email: '',
     password: '',
     confirmPassword: '',
-    email: '',
-    user_type: 'WHOLESALER',
-    phone_number: '',
-    address: '',
-    user_name: '',
+    user_type: 'Grossiste', // Valeur par défaut modifiée pour correspondre à la liste
     company_name: '',
     company_tax_id: '',
+    phone_number: '',
     website: '',
-    contact_email: '',
-    contact_person: '',
     business_address: '',
-    image: null
+    latitude: '',
+    longitude: '',
+    commune: '',
+    quartier: '',
+    zone: '',
+    registre: '',
+    date_creation: '',
+    image: null,
   });
-  
+
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
@@ -50,35 +55,34 @@ const SupplierSignUpScreen = ({ navigation }) => {
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(
-          'Permission refusée',
-          'L\'accès à la localisation est nécessaire pour cette fonctionnalité'
-        );
+        Alert.alert('Permission refusée', "L'accès à la localisation est nécessaire");
         return;
       }
 
       const location = await Location.getCurrentPositionAsync({});
       const address = await Location.reverseGeocodeAsync({
         latitude: location.coords.latitude,
-        longitude: location.coords.longitude
+        longitude: location.coords.longitude,
       });
 
       if (address && address[0]) {
         const addr = address[0];
-        const locationString = [
-          addr.street,
-          addr.postalCode,
-          addr.city,
-          addr.region,
-        ].filter(Boolean).join(', ');
-        setFormData(prev => ({
+        const locationString = [addr.street, addr.postalCode, addr.city, addr.region]
+          .filter(Boolean)
+          .join(', ');
+        setFormData((prev) => ({
           ...prev,
           business_address: locationString,
-          address: locationString
+          latitude: location.coords.latitude.toString(),
+          longitude: location.coords.longitude.toString(),
+          commune: addr.city || '',
+          quartier: addr.subregion || addr.district || '',
+          zone: addr.region || '',
         }));
       }
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de récupérer votre position');
+      console.error('Erreur localisation:', error);
     } finally {
       setIsLoadingLocation(false);
     }
@@ -93,20 +97,45 @@ const SupplierSignUpScreen = ({ navigation }) => {
     });
 
     if (!result.canceled) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        image: result.assets[0]
+        image: result.assets[0],
       }));
     }
   };
 
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateWebsite = (url) => {
+    if (!url) return true; // Optionnel
+    const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+    return urlRegex.test(url);
+  };
+
   const validateForm = () => {
-    if (!formData.username || !formData.password || !formData.email || 
-        !formData.phone_number || !formData.company_name || !formData.company_tax_id) {
-      Alert.alert('Champs requis', 'Veuillez remplir tous les champs obligatoires');
-      return false;
+    const requiredFields = [
+      'username',
+      'email',
+      'password',
+      'user_type',
+      'company_name',
+      'company_tax_id',
+      'phone_number',
+      'registre',
+      'date_creation',
+      'image',
+    ];
+
+    for (let field of requiredFields) {
+      if (!formData[field]) {
+        Alert.alert('Champs requis', `Le champ "${field === 'image' ? 'Image' : field}" est requis`);
+        return false;
+      }
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
       return false;
@@ -117,103 +146,95 @@ const SupplierSignUpScreen = ({ navigation }) => {
       return false;
     }
 
+    if (formData.username.length > 150) {
+      Alert.alert('Erreur', "Le nom d'utilisateur doit contenir 150 caractères ou moins");
+      return false;
+    }
+
+    if (!/^[a-zA-Z0-9@.+-_]+$/.test(formData.username)) {
+      Alert.alert(
+        'Erreur',
+        "Le nom d'utilisateur ne doit contenir que des lettres, chiffres et @/./+/-/_"
+      );
+      return false;
+    }
+
     return true;
   };
 
   const handleSignUp = async () => {
     Keyboard.dismiss();
     if (!validateForm()) return;
-  
+
+    if (formData.website && !validateWebsite(formData.website)) {
+      Alert.alert('Erreur', 'Veuillez entrer une URL valide (ex: https://example.com)');
+      return;
+    }
+
     setIsSubmitting(true);
+
     try {
-      // Création du FormData pour envoyer à la fois les données et l'image
       const formDataToSend = new FormData();
-  
-      // Ajout de toutes les données du formulaire
-      formDataToSend.append('username', formData.username);
-      formDataToSend.append('password', formData.password);
-      formDataToSend.append('email', formData.email);
-      formDataToSend.append('user_type', 'WHOLESALER');
-      formDataToSend.append('phone_number', formData.phone_number);
-      formDataToSend.append('address', formData.business_address);
-      formDataToSend.append('user_name', formData.username);
-      formDataToSend.append('company_name', formData.company_name);
-      formDataToSend.append('company_tax_id', formData.company_tax_id);
-      formDataToSend.append('website', formData.website || '');
-      formDataToSend.append('contact_email', formData.email);
-      formDataToSend.append('contact_person', formData.username);
-      formDataToSend.append('business_address', formData.business_address);
-  
-      // Ajout de l'image si elle existe
-      if (formData.image) {
-        formDataToSend.append('image', {
-          uri: formData.image.uri,
-          type: 'image/jpeg',
-          name: 'profile.jpg'
-        });
-      }
-  
-      console.log('Envoi des données...', Object.fromEntries(formDataToSend));
-  
-      const response = await fetch('https://supply-3.onrender.com/api/register/', {
-        method: 'POST',
-        body: formDataToSend,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key !== 'confirmPassword') {
+          if (key === 'image' && value) {
+            formDataToSend.append('image', {
+              uri: value.uri,
+              type: 'image/jpeg',
+              name: 'profile.jpg',
+            });
+          } else if (value !== null && value !== '') {
+            formDataToSend.append(key, value);
+          }
+        }
       });
-  
-      console.log('Status de la réponse:', response.status);
-      
-      const responseData = await response.text();
-      console.log('Réponse brute:', responseData);
-  
-      let jsonData;
-      try {
-        jsonData = JSON.parse(responseData);
-      } catch (e) {
-        console.log('Erreur parsing JSON:', e);
-        Alert.alert('Erreur', 'Format de réponse invalide du serveur');
-        return;
-      }
-  
-      if (response.ok) {
-        Alert.alert(
-          'Inscription réussie',
-          'Votre compte a été créé avec succès',
-          [
-            {
-              text: 'Continuer',
-              onPress: () => navigation.navigate('LoginScreen')
-            }
-          ]
-        );
-      } else {
-        const errorMessage = jsonData.message || 
-                           Object.values(jsonData).join('\n') ||
-                           'Une erreur est survenue lors de l\'inscription';
-        Alert.alert('Erreur', errorMessage);
-      }
-    } catch (error) {
-      console.log('Erreur lors de l\'inscription:', error);
-      Alert.alert(
-        'Erreur de connexion',
-        'Impossible de communiquer avec le serveur. Veuillez vérifier votre connexion internet.'
+
+      console.log('Données envoyées:', Object.fromEntries(formDataToSend.entries()));
+
+      const response = await axios.post(
+        'https://supply-3.onrender.com/api/register/',
+        formDataToSend,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       );
+
+      console.log('Réponse serveur:', response.data);
+
+      Alert.alert(
+        'Inscription réussie',
+        'Votre compte a été créé avec succès',
+        [
+          {
+            text: 'Continuer',
+            onPress: () => navigation.navigate('LoginScreen'),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Erreur inscription:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+
+      let errorMessage =
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        JSON.stringify(error.response?.data) ||
+        "Une erreur est survenue lors de l'inscription";
+      Alert.alert('Erreur', errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
   const updateFormData = (key, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   };
 
@@ -226,9 +247,9 @@ const SupplierSignUpScreen = ({ navigation }) => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       />
-      
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardAvoidingView}
       >
         <ScrollView
@@ -237,40 +258,102 @@ const SupplierSignUpScreen = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.headerContainer}>
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-            >
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
               <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Créer un compte fournisseur</Text>
           </View>
 
           <View style={styles.formContainer}>
+            {/* Informations de connexion */}
             <TextInput
               label="Nom d'utilisateur"
               value={formData.username}
               onChangeText={(value) => updateFormData('username', value)}
               style={styles.input}
               mode="outlined"
-              theme={{
-                colors: { primary: '#1E4D92', placeholder: '#666' },
-                roundness: 12,
-              }}
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
               left={<TextInput.Icon icon="account" color="#666" />}
+              disabled={isSubmitting}
             />
 
+            <TextInput
+              label="Email professionnel"
+              value={formData.email}
+              onChangeText={(value) => updateFormData('email', value)}
+              style={styles.input}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              mode="outlined"
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
+              left={<TextInput.Icon icon="email" color="#666" />}
+              disabled={isSubmitting}
+            />
+
+            <TextInput
+              label="Mot de passe"
+              value={formData.password}
+              onChangeText={(value) => updateFormData('password', value)}
+              style={styles.input}
+              secureTextEntry={!isPasswordVisible}
+              mode="outlined"
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
+              left={<TextInput.Icon icon="lock" color="#666" />}
+              right={
+                <TextInput.Icon
+                  icon={isPasswordVisible ? 'eye-off' : 'eye'}
+                  onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+                  color="#666"
+                />
+              }
+              disabled={isSubmitting}
+            />
+
+            <TextInput
+              label="Confirmer le mot de passe"
+              value={formData.confirmPassword}
+              onChangeText={(value) => updateFormData('confirmPassword', value)}
+              style={styles.input}
+              secureTextEntry={!isConfirmPasswordVisible}
+              mode="outlined"
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
+              left={<TextInput.Icon icon="lock-check" color="#666" />}
+              right={
+                <TextInput.Icon
+                  icon={isConfirmPasswordVisible ? 'eye-off' : 'eye'}
+                  onPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)}
+                  color="#666"
+                />
+              }
+              disabled={isSubmitting}
+            />
+
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Type d'utilisateur</Text>
+              <Picker
+                selectedValue={formData.user_type}
+                onValueChange={(value) => updateFormData('user_type', value)}
+                style={styles.picker}
+                enabled={!isSubmitting}
+              >
+                <Picker.Item label="Fabricant" value="Fabricant" />
+                <Picker.Item label="Grossiste" value="Grossiste" />
+                <Picker.Item label="Semi-Grossiste" value="Semi-Grossiste" />
+                <Picker.Item label="Détaillant" value="Détaillant" /> 
+                <Picker.Item label="All" value="All" />
+              </Picker>
+            </View>
+
+            {/* Informations de l'entreprise */}
             <TextInput
               label="Nom de l'entreprise"
               value={formData.company_name}
               onChangeText={(value) => updateFormData('company_name', value)}
               style={styles.input}
               mode="outlined"
-              theme={{
-                colors: { primary: '#1E4D92', placeholder: '#666' },
-                roundness: 12,
-              }}
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
               left={<TextInput.Icon icon="domain" color="#666" />}
+              disabled={isSubmitting}
             />
 
             <TextInput
@@ -281,11 +364,9 @@ const SupplierSignUpScreen = ({ navigation }) => {
               keyboardType="number-pad"
               mode="outlined"
               maxLength={14}
-              theme={{
-                colors: { primary: '#1E4D92', placeholder: '#666' },
-                roundness: 12,
-              }}
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
               left={<TextInput.Icon icon="identifier" color="#666" />}
+              disabled={isSubmitting}
             />
 
             <TextInput
@@ -295,27 +376,48 @@ const SupplierSignUpScreen = ({ navigation }) => {
               style={styles.input}
               keyboardType="phone-pad"
               mode="outlined"
-              theme={{
-                colors: { primary: '#1E4D92', placeholder: '#666' },
-                roundness: 12,
-              }}
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
               left={<TextInput.Icon icon="phone" color="#666" />}
+              disabled={isSubmitting}
             />
 
             <TextInput
-              label="Site web"
+              label="Site web (optionnel, ex: https://example.com)"
               value={formData.website}
               onChangeText={(value) => updateFormData('website', value)}
               style={styles.input}
               keyboardType="url"
               mode="outlined"
-              theme={{
-                colors: { primary: '#1E4D92', placeholder: '#666' },
-                roundness: 12,
-              }}
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
               left={<TextInput.Icon icon="web" color="#666" />}
+              disabled={isSubmitting}
             />
 
+            <TextInput
+              label="Numéro de registre (ex. CI-M-2025)"
+              value={formData.registre}
+              onChangeText={(value) => updateFormData('registre', value)}
+              style={styles.input}
+              mode="outlined"
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
+              left={<TextInput.Icon icon="file-document" color="#666" />}
+              disabled={isSubmitting}
+            />
+
+            <TextInput
+              label="Date de création (ex. 01012025)"
+              value={formData.date_creation}
+              onChangeText={(value) => updateFormData('date_creation', value)}
+              style={styles.input}
+              keyboardType="number-pad"
+              mode="outlined"
+              maxLength={8}
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
+              left={<TextInput.Icon icon="calendar" color="#666" />}
+              disabled={isSubmitting}
+            />
+
+            {/* Informations de localisation */}
             <View style={styles.locationContainer}>
               <TextInput
                 label="Adresse"
@@ -323,16 +425,14 @@ const SupplierSignUpScreen = ({ navigation }) => {
                 onChangeText={(value) => updateFormData('business_address', value)}
                 style={[styles.input, styles.locationInput]}
                 mode="outlined"
-                theme={{
-                  colors: { primary: '#1E4D92', placeholder: '#666' },
-                  roundness: 12,
-                }}
+                theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
                 left={<TextInput.Icon icon="map-marker" color="#666" />}
+                disabled={isSubmitting}
               />
               <TouchableOpacity
                 style={styles.locationButton}
                 onPress={getLocation}
-                disabled={isLoadingLocation}
+                disabled={isLoadingLocation || isSubmitting}
               >
                 {isLoadingLocation ? (
                   <ActivityIndicator size="small" color="#fff" />
@@ -343,65 +443,67 @@ const SupplierSignUpScreen = ({ navigation }) => {
             </View>
 
             <TextInput
-              label="Email professionnel"
-              value={formData.email}
-              onChangeText={(value) => updateFormData('email', value)}
+              label="Latitude"
+              value={formData.latitude}
+              onChangeText={(value) => updateFormData('latitude', value)}
               style={styles.input}
-              keyboardType="email-address"
-              autoCapitalize="none"
+              keyboardType="numeric"
               mode="outlined"
-              theme={{
-                colors: { primary: '#1E4D92', placeholder: '#666' },
-                roundness: 12,
-              }}
-              left={<TextInput.Icon icon="email" color="#666" />}
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
+              left={<TextInput.Icon icon="latitude" color="#666" />}
+              disabled={isSubmitting}
             />
 
             <TextInput
-              label="Mot de passe"
-              value={formData.password}
-              onChangeText={(value) => updateFormData('password', value)}
+              label="Longitude"
+              value={formData.longitude}
+              onChangeText={(value) => updateFormData('longitude', value)}
               style={styles.input}
-              secureTextEntry={!isPasswordVisible}
+              keyboardType="numeric"
               mode="outlined"
-              theme={{
-                colors: { primary: '#1E4D92', placeholder: '#666' },
-                roundness: 12,
-              }}
-              left={<TextInput.Icon icon="lock" color="#666" />}
-              right={
-                <TextInput.Icon 
-                  icon={isPasswordVisible ? "eye-off" : "eye"}
-                  onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-                  color="#666"
-                />
-              }
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
+              left={<TextInput.Icon icon="longitude" color="#666" />}
+              disabled={isSubmitting}
             />
 
             <TextInput
-              label="Confirmer le mot de passe"
-              value={formData.confirmPassword}
-              onChangeText={(value) => updateFormData('confirmPassword', value)}
+              label="Commune"
+              value={formData.commune}
+              onChangeText={(value) => updateFormData('commune', value)}
               style={styles.input}
-              secureTextEntry={!isConfirmPasswordVisible}
               mode="outlined"
-              theme={{
-                colors: { primary: '#1E4D92', placeholder: '#666' },
-                roundness: 12,
-              }}
-              left={<TextInput.Icon icon="lock-check" color="#666" />}
-              right={
-                <TextInput.Icon 
-                  icon={isConfirmPasswordVisible ? "eye-off" : "eye"}
-                  onPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)}
-                  color="#666"
-                />
-              }
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
+              left={<TextInput.Icon icon="city" color="#666" />}
+              disabled={isSubmitting}
             />
 
+            <TextInput
+              label="Quartier"
+              value={formData.quartier}
+              onChangeText={(value) => updateFormData('quartier', value)}
+              style={styles.input}
+              mode="outlined"
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
+              left={<TextInput.Icon icon="home-group" color="#666" />}
+              disabled={isSubmitting}
+            />
+
+            <TextInput
+              label="Zone"
+              value={formData.zone}
+              onChangeText={(value) => updateFormData('zone', value)}
+              style={styles.input}
+              mode="outlined"
+              theme={{ colors: { primary: '#1E4D92', placeholder: '#666' }, roundness: 12 }}
+              left={<TextInput.Icon icon="map" color="#666" />}
+              disabled={isSubmitting}
+            />
+
+            {/* Image */}
             <TouchableOpacity
               style={styles.imagePickerButton}
               onPress={pickImage}
+              disabled={isSubmitting}
             >
               <MaterialCommunityIcons name="camera" size={24} color="#1E4D92" />
               <Text style={styles.imagePickerText}>
@@ -409,8 +511,9 @@ const SupplierSignUpScreen = ({ navigation }) => {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.signUpButton}
+            {/* Boutons */}
+            <TouchableOpacity
+              style={[styles.signUpButton, isSubmitting && styles.signUpButtonDisabled]}
               onPress={handleSignUp}
               disabled={isSubmitting}
               activeOpacity={0.8}
@@ -434,9 +537,10 @@ const SupplierSignUpScreen = ({ navigation }) => {
 
             <View style={styles.loginPromptContainer}>
               <Text style={styles.loginPromptText}>Déjà inscrit ?</Text>
-              <TouchableOpacity 
-                onPress={() => navigation.navigate('LoginScreen')}
+              <TouchableOpacity
+                onPress={() => navigation.navigate('LoginCollecte')}
                 activeOpacity={0.7}
+                disabled={isSubmitting}
               >
                 <Text style={styles.loginLink}>Se connecter</Text>
               </TouchableOpacity>
@@ -547,6 +651,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
+  signUpButtonDisabled: {
+    opacity: 0.7,
+  },
   gradientButton: {
     padding: 16,
     flexDirection: 'row',
@@ -573,6 +680,24 @@ const styles = StyleSheet.create({
     color: '#1E4D92',
     fontWeight: '600',
     fontSize: 14,
+  },
+  pickerContainer: {
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1E4D92',
+    overflow: 'hidden',
+  },
+  pickerLabel: {
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    fontSize: 12,
+    color: '#666',
+  },
+  picker: {
+    height: Platform.OS === 'ios' ? 120 : 50,
+    width: '100%',
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -12,12 +12,14 @@ import {
   Dimensions,
   StatusBar,
   ScrollView,
-  Keyboard
+  Keyboard,
 } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
+import api from './api'; // Importer l'instance axios
+import { AuthContext } from './AuthContext'; // Importer le contexte d'authentification
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,46 +29,52 @@ const LoginCollecte = ({ navigation }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // const handleLogin = () => {
-  //   Keyboard.dismiss();
-  //   if (!email || !password) {
-  //     Alert.alert(
-  //       'Champs requis',
-  //       'Veuillez remplir tous les champs pour continuer',
-  //       [{ text: 'Compris', style: 'default' }]
-  //     );
-  //     return;
-  //   }
-
-  //   setTimeout(() => {
-  //     navigation.navigate('SupplierProductsScreen');
-  //   }, 1000);
-  // };
+  const { login } = useContext(AuthContext); // Récupérer la fonction login du contexte
 
   const handleLogin = async () => {
-      Keyboard.dismiss();
-  
-      // Vérification des champs requis
-      if (!email || !password) {
-        Alert.alert('Champs requis', 'Veuillez remplir tous les champs pour continuer', [
-          { text: 'Compris', style: 'default' },
-        ]);
-        return;
+    Keyboard.dismiss();
+
+    // Vérification des champs requis
+    if (!email || !password) {
+      Alert.alert('Champs requis', 'Veuillez remplir tous les champs pour continuer', [
+        { text: 'Compris', style: 'default' },
+      ]);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Requête POST à l'API de connexion
+      const response = await api.post('/login/', {
+        email: email,
+        password: password,
+      });
+
+      const { access_token, refresh_token } = response.data;
+
+      // Stocker les tokens via le contexte
+      login(access_token, refresh_token);
+
+      // Naviguer vers le tableau de bord après succès
+      navigation.navigate('HomeDashboard');
+    } catch (error) {
+      console.error('Erreur de connexion:', error);
+      let errorMessage = 'Une erreur est survenue lors de la connexion';
+      if (error.response) {
+        if (error.response.status === 401) {
+          errorMessage = 'Email ou mot de passe incorrect';
+        } else {
+          errorMessage = error.response.data.message || errorMessage;
+        }
       }
-  
-      // Vérification des identifiants
-      if (
-        (email === 'issa@gmail.com' && password === 'issa01') ||
-        (email === 'romy@gmail.com' && password === 'romy01')
-      ) {
-        // Connexion réussie, naviguer vers le tableau de bord
-        navigation.navigate('HomeDashboard');
-      } else {
-        // Identifiants incorrects
-        Alert.alert('Erreur de connexion', 'Email ou mot de passe incorrect');
-      }
-    };
+      Alert.alert('Erreur', errorMessage, [{ text: 'Réessayer', style: 'default' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -83,10 +91,10 @@ const LoginCollecte = ({ navigation }) => {
         end={{ x: 1, y: 1 }}
       />
       
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardAvoidingView}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -94,15 +102,15 @@ const LoginCollecte = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.logoContainer}>
-            <Image 
-              source={require('../assets/collecte.png')} 
-              style={styles.logo} 
+            <Image
+              source={require('../assets/collecte.png')}
+              style={styles.logo}
               resizeMode="contain"
             />
             <Text style={styles.brandName}>Supply Chain Collecte</Text>
             <Text style={styles.subtitle}>Gérez la collecte des informations sur une surface</Text>
           </View>
-          <Animatable.View 
+          <Animatable.View
             animation="slideInUp"
             duration={1000}
             style={styles.formContainer}
@@ -118,11 +126,11 @@ const LoginCollecte = ({ navigation }) => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 mode="outlined"
-                // onFocus={() => setIsEmailFocused(true)}
-                // onBlur={() => setIsEmailFocused(false)}
+                onFocus={() => setIsEmailFocused(true)}
+                onBlur={() => setIsEmailFocused(false)}
                 error={email.length > 0 && !validateEmail(email)}
                 theme={{
-                  colors: { 
+                  colors: {
                     primary: '#2563EB',
                     error: '#DC2626',
                     placeholder: '#64748B',
@@ -130,6 +138,7 @@ const LoginCollecte = ({ navigation }) => {
                   roundness: 12,
                 }}
                 left={<TextInput.Icon icon="email" color={isEmailFocused ? '#2563EB' : '#64748B'} />}
+                disabled={loading}
               />
               <TextInput
                 label="Mot de passe"
@@ -138,10 +147,10 @@ const LoginCollecte = ({ navigation }) => {
                 style={[styles.input, isPasswordFocused && styles.inputFocused]}
                 secureTextEntry={!isPasswordVisible}
                 mode="outlined"
-                // onFocus={() => setIsPasswordFocused(true)}
-                // onBlur={() => setIsPasswordFocused(false)}
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
                 theme={{
-                  colors: { 
+                  colors: {
                     primary: '#2563EB',
                     placeholder: '#64748B',
                   },
@@ -149,24 +158,23 @@ const LoginCollecte = ({ navigation }) => {
                 }}
                 left={<TextInput.Icon icon="lock" color={isPasswordFocused ? '#2563EB' : '#64748B'} />}
                 right={
-                  <TextInput.Icon 
-                    icon={isPasswordVisible ? "eye-off" : "eye"}
+                  <TextInput.Icon
+                    icon={isPasswordVisible ? 'eye-off' : 'eye'}
                     onPress={() => setIsPasswordVisible(!isPasswordVisible)}
                     color={isPasswordFocused ? '#2563EB' : '#64748B'}
                   />
                 }
+                disabled={loading}
               />
-              <TouchableOpacity 
-                style={styles.forgotPassword}
-                activeOpacity={0.7}
-              >
+              <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.7}>
                 <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={styles.loginButton}
+              <TouchableOpacity
+                style={[styles.loginButton, loading && styles.loginButtonDisabled]}
                 onPress={handleLogin}
                 activeOpacity={0.8}
+                disabled={loading}
               >
                 <LinearGradient
                   colors={['#1E40AF', '#3B82F6']}
@@ -174,8 +182,10 @@ const LoginCollecte = ({ navigation }) => {
                   end={{ x: 1, y: 0 }}
                   style={styles.gradientButton}
                 >
-                  <Text style={styles.loginButtonText}>Se connecter</Text>
-                  <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
+                  <Text style={styles.loginButtonText}>
+                    {loading ? 'Connexion...' : 'Se connecter'}
+                  </Text>
+                  {!loading && <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />}
                 </LinearGradient>
               </TouchableOpacity>
 
@@ -185,10 +195,11 @@ const LoginCollecte = ({ navigation }) => {
                 <View style={styles.divider} />
               </View>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.ssoButton}
                 activeOpacity={0.7}
-                onPress={()=>navigation.navigate('SupplierSignUpScreen')}
+                onPress={() => navigation.navigate('SupplierSignUpScreen')}
+                disabled={loading}
               >
                 <MaterialCommunityIcons name="store" size={24} color="#2563EB" />
                 <Text style={styles.ssoButtonText}>Créer une boutique</Text>
@@ -301,6 +312,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
+  loginButtonDisabled: {
+    opacity: 0.7,
+  },
   gradientButton: {
     padding: 16,
     flexDirection: 'row',
@@ -360,7 +374,7 @@ const styles = StyleSheet.create({
     color: '#2563EB',
     fontWeight: '600',
     fontSize: 14,
-  }
+  },
 });
 
 export default LoginCollecte;

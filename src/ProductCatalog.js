@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,27 +13,35 @@ import {
   StatusBar,
   Dimensions,
   Switch,
-  Animated,
-  Alert
+  ActivityIndicator,
+  Alert,
+  RefreshControl, // Ajout de RefreshControl
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Picker } from '@react-native-picker/picker';
 import Slider from '@react-native-community/slider';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import MapView, { Marker } from 'react-native-maps';
+import api from './api';
+import { useAuth } from './AuthContext';
+import axios from 'axios';
+
 
 const { width } = Dimensions.get('window');
 const cardWidth = width / 2 - 24;
+const BASE_MEDIA_URL = 'https://supply-3.onrender.com/media/';
 
-const ProductsScreen = () => {
-  // État initial des modales
+
+const ProductsScreen = ({ navigation, route }) => {
+  const { accessToken, logout } = useAuth();
   const [modalStates, setModalStates] = useState({
     cart: false,
     confirm: false,
     filter: false,
-    productDetails: false
+    productDetails: false,
+    map: false,
   });
-
-  // États pour les données
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('Tous');
@@ -42,339 +50,369 @@ const ProductsScreen = () => {
   const [selectedFormat, setSelectedFormat] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Tous', icon: 'grid-view' }
-  ]);
+  const [categories, setCategories] = useState([{ id: 1, name: 'Tous', icon: 'grid-view' }]);
   const [filters, setFilters] = useState({
     category: 'Tous',
-    minPrice: '',
-    maxPrice: '',
+    minPrice: 0,
+    maxPrice: 1000000,
     inStock: false,
+    commune: '',
     quartier: '',
     zone: '',
     delai: '',
-    etoiles: '',
+    etoiles: 0,
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [locations, setLocations] = useState({ communes: [], quartiers: [], zones: [] });
+  const [refreshing, setRefreshing] = useState(false); // État pour le rafraîchissement
+  const [loading, setLoading] = useState(true);
+  const { businessType } = route.params; // Objet complet businessType reçu
 
-  // Fonction améliorée pour gérer l'état des modales
-  const toggleModal = (modalName, value) => {
-    // Utiliser cette méthode pour éviter les mises à jour partielles d'état
-    setModalStates(prev => ({
-      ...prev,
-      [modalName]: value
-    }));
-  };
+  const toggleModal = useCallback((modalName, value) => {
+    setModalStates(prev => ({ ...prev, [modalName]: value }));
+  }, []);
 
-  // Fonction pour réinitialiser les états des modales produit sans fermer la modale
-  const resetProductModalStates = () => {
+  const resetProductModalStates = useCallback(() => {
     setSelectedFormat(null);
     setQuantity(1);
     setCurrentImageIndex(0);
+  }, []);
+
+  // Fonction pour charger les données initiales
+  const loadInitialData = async () => {
+    setIsLoading(true);
+    try {
+      await Promise.all([
+        fetchCategories(),
+        fetchProducts(),
+        fetchLocations(),
+      ]);
+    } catch (err) {
+      setError(err.message || 'Erreur lors du chargement des données');
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false); // Désactiver refreshing après le chargement
+    }
   };
 
   useEffect(() => {
-    fetchCategories();
-    fetchProducts();
-  }, []);
+    if (!accessToken) {
+      setError('Utilisateur non authentifié');
+      navigation.navigate('Login');
+      return;
+    }
+    loadInitialData();
+  }, [accessToken, navigation]);
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('https://supply-3.onrender.com/api/categories/');
-      const data = await response.json();
-      const transformedData = data.map((category, index) => ({
-        id: index + 2,
+      const response = await api.get('/categories/', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const transformedData = response.data.map((category, index) => ({
+        id: category.id || index + 2,
         name: category.name,
-        icon: getIconForCategory(category.name)
+        icon: getIconForCategory(category.name),
       }));
       setCategories([{ id: 1, name: 'Tous', icon: 'grid-view' }, ...transformedData]);
     } catch (error) {
-      console.error('Erreur lors de la récupération des catégories:', error);
+      console.error('Erreur fetchCategories:', error);
+      throw error;
     }
   };
 
   const fetchProducts = async () => {
+    setLoading(true);
     try {
-      const response = await fetch('https://supply-3.onrender.com/api/products/');
-      const data = await response.json();
-      setProducts(data);
+      if (!accessToken) {
+        throw new Error('Aucun token d’accès disponible');
+      }
+
+      // Mapper le nom du businessType à l'endpoint correspondant
+      const endpointMap = {
+        'Fabricant': 'fabricant',
+        'Grossiste': 'grossiste',
+        'Semi-Grossiste': 'semi-grossiste',
+        'Détaillant': 'detaillant',
+      };
+      const endpoint = endpointMap[businessType.name] || 'grossiste'; // Par défaut 'grossiste' si non trouvé
+      const url = `https://supply-3.onrender.com/api/products/${endpoint}/`;
+
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Ajouter l'URL complète aux images des formats
+      const productsWithFullUrls = response.data.map(product => ({
+        ...product,
+        formats: product.formats.map(format => ({
+          ...format,
+          image: format.image.startsWith('http') 
+            ? format.image 
+            : `${BASE_MEDIA_URL}${format.image}`,
+        })),
+      }));
+      setProducts(productsWithFullUrls);
     } catch (error) {
-      console.error('Erreur lors de la récupération des produits:', error);
+      if (error.response?.status === 401 && refreshToken) {
+        try {
+          const newAccessToken = await refreshAccessToken(refreshToken);
+          const endpointMap = {
+            'Fabricant': 'fabricant',
+            'Grossiste': 'grossiste',
+            'Semi-Grossiste': 'semi-grossiste',
+            'Détaillant': 'detaillant',
+          };
+          const endpoint = endpointMap[businessType.name] || 'grossiste';
+          const url = `https://supply-3.onrender.com/api/products/${endpoint}/`;
+          const response = await axios.get(url, {
+            headers: {
+              Authorization: `Bearer ${newAccessToken}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          const productsWithFullUrls = response.data.map(product => ({
+            ...product,
+            formats: product.formats.map(format => ({
+              ...format,
+              image: format.image.startsWith('http') 
+                ? format.image 
+                : `${BASE_MEDIA_URL}${format.image}`,
+            })),
+          }));
+          setProducts(productsWithFullUrls);
+        } catch (refreshError) {
+          console.error('Échec du rafraîchissement du token:', refreshError);
+          setProducts([]);
+        }
+      } else {
+        console.error('Erreur lors de la récupération des produits:', error);
+        setProducts([]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchLocations = async () => {
+    try {
+      const [communesRes, quartiersRes, zonesRes] = await Promise.all([
+        api.get('/commune/'),
+        api.get('/quartier/'),
+        api.get('/zone/'),
+      ]);
+      setLocations({
+        communes: communesRes.data || [],
+        quartiers: quartiersRes.data || [],
+        zones: zonesRes.data || [],
+      });
+    } catch (error) {
+      console.error('Erreur fetchLocations:', error);
+      throw error;
     }
   };
 
   const getIconForCategory = (categoryName) => {
     const categoryIcons = {
-      'construction': 'build',
-      'aliment': 'restaurant',
-      'cosmetique': 'spa',
-      'bricolage': 'handyman'
+      construction: 'build',
+      aliment: 'restaurant',
+      cosmetique: 'spa',
+      bricolage: 'handyman',
     };
     return categoryIcons[categoryName.toLowerCase()] || 'category';
   };
 
-  // Fonction modifiée pour ajouter au panier sans fermer la modale
-  const addToCart = (product, format, quantity) => {
+  const addToCart = useCallback((product, format, qty) => {
     const item = {
       id: `${product.id}-${format.id}`,
       name: product.name,
       format,
-      quantity,
+      quantity: qty,
     };
-    
-    // Ajouter au panier sans fermer la modale
-    setCart(prev => [...prev, item]);
-    
-    // Réinitialiser uniquement le format sélectionné et la quantité
+    setCart(prev => [...prev.filter(i => i.id !== item.id), item]);
+    toggleModal('productDetails', false);
+  }, [toggleModal]);
+
+  const getTotal = useCallback(() => {
+    return cart
+      .reduce((sum, item) => sum + (parseFloat(item.format.price || 0) * item.quantity), 0)
+      .toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }, [cart]);
+
+  const calculateProductTotal = useCallback(() => {
+    if (!selectedFormat) return '0.00';
+    return (parseFloat(selectedFormat.price || 0) * quantity).toLocaleString('fr-FR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }, [selectedFormat, quantity]);
+
+  const openProductDetails = useCallback((product) => {
+    setSelectedProduct(product);
     setSelectedFormat(null);
     setQuantity(1);
-    
-    // Afficher un message de confirmation sans fermer la modale
-    Alert.alert(
-      "Produit ajouté",
-      `${product.name} ajouté au panier`,
-      [{ text: "OK" }],
-      { cancelable: true }
-    );
-  };
-
-  const getTotal = () => {
-    return cart.reduce((sum, item) => 
-      sum + (parseFloat(item.format.price || 0) * item.quantity), 0
-    ).toFixed(2);
-  };
+    setCurrentImageIndex(0);
+    toggleModal('productDetails', true);
+  }, [toggleModal]);
 
   const submitOrder = async () => {
+    setIsLoading(true);
     try {
+      const totalAmount = cart.reduce(
+        (sum, item) => sum + parseFloat(item.format.price || 0) * item.quantity,
+        0
+      );
+
       const orderData = {
-        user: 1,
-        status: "PENDING",
+        status: 'PENDING',
+        total_amount: totalAmount,
         items: cart.map(item => ({
           product_format: item.format.id,
-          quantity: item.quantity
-        }))
+          quantity: item.quantity,
+          price_at_order: parseFloat(item.format.price),
+        })),
       };
 
-      const response = await fetch('https://supply-3.onrender.com/api/orders/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
+      const response = await api.post('/orders/', orderData, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
       });
 
-      if (!response.ok) throw new Error('Erreur réseau');
+      console.log('Order Response:', response.data);
 
       setCart([]);
       toggleModal('confirm', false);
-      Alert.alert("Succès", "Commande envoyée avec succès !");
+      Alert.alert('Succès', 'Commande envoyée avec succès !');
+
+      // Rafraîchir les produits après une commande réussie
+      await fetchProducts(); // Recharger les produits pour refléter les changements (ex: stock)
     } catch (error) {
-      Alert.alert("Erreur", "Erreur lors de la soumission");
-      console.error('Erreur:', error);
+      console.error('Erreur submitOrder:', error);
+      const errorMessage = error.response?.data?.detail ||
+                          JSON.stringify(error.response?.data) ||
+                          'Erreur lors de la soumission de la commande';
+      Alert.alert('Erreur', errorMessage);
+      if (error.response?.status === 401) {
+        logout();
+        navigation.navigate('Login');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Composant FilterModal modifié
+  // Fonction pour gérer le "pull-to-refresh"
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadInitialData(); // Recharger toutes les données
+  }, []);
+
   const FilterModal = ({ visible, onClose, onApplyFilters, filters, setFilters }) => {
     const [localFilters, setLocalFilters] = useState(filters);
-    const [communes, setCommunes] = useState([]);
-    const [quartiers, setQuartiers] = useState([]);
-    const [zones, setZones] = useState([]);
 
-    // Utiliser des états locaux pour éviter les mises à jour en cascade
-    const [minPrice, setMinPrice] = useState(filters.minPrice ? parseFloat(filters.minPrice) : 0);
-    const [maxPrice, setMaxPrice] = useState(filters.maxPrice ? parseFloat(filters.maxPrice) : 1000000);
-
-    // Synchroniser les filtres locaux avec les filtres globaux quand la modale s'ouvre
     useEffect(() => {
-      if (visible) {
-        setLocalFilters(filters);
-        setMinPrice(filters.minPrice ? parseFloat(filters.minPrice) : 0);
-        setMaxPrice(filters.maxPrice ? parseFloat(filters.maxPrice) : 1000000);
-      }
+      if (visible) setLocalFilters(filters);
     }, [visible, filters]);
 
-    useEffect(() => {
-      fetchLocations();
-    }, []);
-
-    const fetchLocations = async () => {
-      try {
-        const [communesRes, quartiersRes, zonesRes] = await Promise.all([
-          fetch('https://supply-3.onrender.com/api/commune/'),
-          fetch('https://supply-3.onrender.com/api/quartier/'),
-          fetch('https://supply-3.onrender.com/api/zone/')
-        ]);
-        
-        const communesData = await communesRes.json();
-        const quartiersData = await quartiersRes.json();
-        const zonesData = await zonesRes.json();
-        
-        setCommunes(communesData);
-        setQuartiers(quartiersData);
-        setZones(zonesData);
-      } catch (error) {
-        console.error('Erreur lors de la récupération des données de localisation:', error);
-      }
-    };
-
-    // Mettre à jour les filtres locaux
     const updateLocalFilters = (key, value) => {
-      setLocalFilters(prev => ({
-        ...prev,
-        [key]: value
-      }));
+      setLocalFilters(prev => ({ ...prev, [key]: value }));
     };
 
-    // Appliquer les filtres globalement seulement quand on clique sur "Appliquer"
-    const applyLocalFilters = () => {
-      setFilters({
-        ...localFilters,
-        minPrice,
-        maxPrice
-      });
+    const applyFilters = () => {
+      setFilters(localFilters);
       onApplyFilters();
     };
 
-    // Réinitialiser tous les filtres
     const resetFilters = () => {
       const defaultFilters = {
         category: 'Tous',
-        minPrice: '',
-        maxPrice: '',
+        minPrice: 0,
+        maxPrice: 1000000,
         inStock: false,
+        commune: '',
         quartier: '',
         zone: '',
         delai: '',
-        etoiles: '',
+        etoiles: 0,
       };
       setLocalFilters(defaultFilters);
-      setMinPrice(0);
-      setMaxPrice(1000000);
       setFilters(defaultFilters);
       onClose();
     };
 
-    const StarRating = () => {
-      const stars = [1, 2, 3, 4, 5];
-      return (
-        <View style={styles.starsContainer}>
-          {stars.map((star) => (
-            <TouchableOpacity
-              key={star}
-              onPress={() => updateLocalFilters('etoiles', star)}
-              style={styles.starButton}
-            >
-              <Icon
-                name={localFilters.etoiles >= star ? "star" : "star-border"}
-                size={30}
-                color={localFilters.etoiles >= star ? "#FFD700" : "#D1D5DB"}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-      );
-    };
-
     return (
-      <Modal
-        visible={visible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={onClose}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Filtrer les produits</Text>
-            
+      <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.filterModalContent}>
+            <Text style={styles.modalTitle}>Filtres</Text>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.filterLabel}>Prix ({minPrice.toLocaleString()} - {maxPrice.toLocaleString()} FCFA)</Text>
-              <View style={styles.sliderContainer}>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={0}
-                  maximumValue={1000000}
-                  value={minPrice}
-                  onValueChange={setMinPrice}
-                  minimumTrackTintColor="#2563EB"
-                  maximumTrackTintColor="#D1D5DB"
-                  thumbTintColor="#2563EB"
-                  step={1000}
-                />
-                <Slider
-                  style={styles.slider}
-                  minimumValue={0}
-                  maximumValue={1000000}
-                  value={maxPrice}
-                  onValueChange={setMaxPrice}
-                  minimumTrackTintColor="#2563EB"
-                  maximumTrackTintColor="#D1D5DB"
-                  thumbTintColor="#2563EB"
-                  step={1000}
-                />
-              </View>
+              <Text style={styles.filterLabel}>Prix ({localFilters.minPrice.toLocaleString()} - {localFilters.maxPrice.toLocaleString()} FCFA)</Text>
+              <Slider
+                style={styles.slider}
+                minimumValue={0}
+                maximumValue={1000000}
+                value={localFilters.minPrice}
+                onValueChange={value => updateLocalFilters('minPrice', Math.round(value))}
+                minimumTrackTintColor="#2563EB"
+                thumbTintColor="#2563EB"
+                step={1000}
+              />
+              <Slider
+                style={styles.slider}
+                minimumValue={0}
+                maximumValue={1000000}
+                value={localFilters.maxPrice}
+                onValueChange={value => updateLocalFilters('maxPrice', Math.round(value))}
+                minimumTrackTintColor="#2563EB"
+                thumbTintColor="#2563EB"
+                step={1000}
+              />
 
-              <Text style={styles.filterLabel}>Commune</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={localFilters.commune}
-                  onValueChange={(value) => updateLocalFilters('commune', value)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Sélectionner une commune" value="" />
-                  {communes.map((item, index) => (
-                    <Picker.Item key={index} label={item.commune} value={item.commune} />
-                  ))}
-                </Picker>
-              </View>
+              {['commune', 'quartier', 'zone'].map((type) => (
+                <View key={type} style={styles.pickerContainer}>
+                  <Text style={styles.filterLabel}>{type.charAt(0).toUpperCase() + type.slice(1)}</Text>
+                  <Picker
+                    selectedValue={localFilters[type]}
+                    onValueChange={value => updateLocalFilters(type, value)}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label={`Sélectionner un ${type}`} value="" />
+                    {locations[`${type}s`].length > 0 ? (
+                      locations[`${type}s`].map((item, index) => (
+                        <Picker.Item
+                          key={index}
+                          label={item.name || item[type]}
+                          value={item.name || item[type]}
+                        />
+                      ))
+                    ) : (
+                      <Picker.Item label="Aucune donnée" value="" />
+                    )}
+                  </Picker>
+                </View>
+              ))}
 
-              <Text style={styles.filterLabel}>Quartier</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={localFilters.quartier}
-                  onValueChange={(value) => updateLocalFilters('quartier', value)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Sélectionner un quartier" value="" />
-                  {quartiers.map((item, index) => (
-                    <Picker.Item key={index} label={item.quartier} value={item.quartier} />
-                  ))}
-                </Picker>
-              </View>
-
-              <Text style={styles.filterLabel}>Zone</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={localFilters.zone}
-                  onValueChange={(value) => updateLocalFilters('zone', value)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Sélectionner une zone" value="" />
-                  {zones.map((item, index) => (
-                    <Picker.Item key={index} label={item.zone} value={item.zone} />
-                  ))}
-                </Picker>
-              </View>
-
-              <Text style={styles.filterLabel}>Évaluation minimum</Text>
-              <StarRating />
-
-              <View style={styles.filterSwitchContainer}>
-                <Text style={styles.filterSwitchLabel}>En stock seulement</Text>
+              <View style={styles.switchContainer}>
+                <Text style={styles.filterLabel}>En stock</Text>
                 <Switch
                   value={localFilters.inStock}
-                  onValueChange={(value) => updateLocalFilters('inStock', value)}
+                  onValueChange={value => updateLocalFilters('inStock', value)}
                   trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
                   thumbColor={localFilters.inStock ? '#2563EB' : '#F3F4F6'}
                 />
               </View>
 
-              <TouchableOpacity 
-                style={styles.applyButton}
-                onPress={applyLocalFilters}
-              >
+              <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
                 <Text style={styles.applyButtonText}>Appliquer</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity style={styles.closeButton} onPress={resetFilters}>
-                <Text style={styles.closeButtonText}>Réinitialiser</Text>
+              <TouchableOpacity style={styles.resetButton} onPress={resetFilters}>
+                <Text style={styles.resetButtonText}>Réinitialiser</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -383,328 +421,85 @@ const ProductsScreen = () => {
     );
   };
 
-  // Filtre des produits
   const filteredProducts = products.filter(product => {
-    const matchesCategory = filters.category === 'Tous' || product.category_name === filters.category;
     const price = parseFloat(product.formats?.[0]?.price || 0);
-    const matchesPrice = (
-      (!filters.minPrice || price >= parseFloat(filters.minPrice)) &&
-      (!filters.maxPrice || price <= parseFloat(filters.maxPrice))
-    );
-    const matchesStock = !filters.inStock || (product.formats?.[0]?.stock > 0);
-    const matchesSearch = !searchText || product.name.toLowerCase().includes(searchText.toLowerCase());
-    const matchesQuartier = !filters.quartier || product.supplier_quartier.toLowerCase().includes(filters.quartier.toLowerCase());
-    const matchesZone = !filters.zone || product.supplier_zone.toLowerCase().includes(filters.zone.toLowerCase());
-    const matchesDelai = !filters.delai || product.last_order <= filters.delai;
-    const matchesEtoiles = !filters.etoiles || product.etoiles >= parseFloat(filters.etoiles);
-
     return (
-      matchesCategory &&
-      matchesPrice &&
-      matchesStock &&
-      matchesSearch &&
-      matchesQuartier &&
-      matchesZone &&
-      matchesDelai &&
-      matchesEtoiles
+      (filters.category === 'Tous' || product.category_name === filters.category) &&
+      price >= filters.minPrice &&
+      price <= filters.maxPrice &&
+      (!filters.inStock || product.formats?.[0]?.stock > 0) &&
+      (!searchText || product.name.toLowerCase().includes(searchText.toLowerCase())) &&
+      (!filters.commune || product.supplier_commune?.toLowerCase().includes(filters.commune.toLowerCase())) &&
+      (!filters.quartier || product.supplier_quartier?.toLowerCase().includes(filters.quartier.toLowerCase())) &&
+      (!filters.zone || product.supplier_zone?.toLowerCase().includes(filters.zone.toLowerCase()))
     );
   });
-  
-  const CartModal = () => (
-    <Modal 
-      visible={modalStates.cart} 
-      animationType="slide" 
-      transparent={true}
-      onRequestClose={() => toggleModal('cart', false)}
-    >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Panier</Text>
-            <TouchableOpacity onPress={() => toggleModal('cart', false)}>
-              <Icon name="close" size={24} color="#000" />
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView>
-            {cart.length === 0 ? (
-              <Text style={styles.emptyCartText}>Votre panier est vide</Text>
-            ) : (
-              cart.map((item) => (
-                <View key={item.id} style={styles.cartItem}>
-                  <Image source={{ uri: item.format.image }} style={styles.cartItemImage} />
-                  <View style={styles.cartItemInfo}>
-                    <Text style={styles.cartItemName}>{item.name}</Text>
-                    <Text style={styles.cartItemPrice}>
-                      {parseInt(item.format.price || 0).toLocaleString()} FCFA
-                    </Text>
-                    <Text style={styles.cartItemQuantity}>Quantité: {item.quantity}</Text>
-                  </View>
-                </View>
-              ))
-            )}
-          </ScrollView>
-          
-          {cart.length > 0 && (
-            <>
-              <Text style={styles.totalText}>
-                Total: {getTotal().toLocaleString()} FCFA
-              </Text>
-              <TouchableOpacity
-                style={styles.validateButton}
-                onPress={() => {
-                  toggleModal('cart', false);
-                  toggleModal('confirm', true);
-                }}
-              >
-                <Text style={styles.validateButtonText}>Valider</Text>
-              </TouchableOpacity>
-            </>
-          )}
-          
-          <TouchableOpacity 
-            style={styles.closeButton} 
-            onPress={() => toggleModal('cart', false)}
-          >
-            <Text style={styles.closeButtonText}>Fermer</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
 
-  const ConfirmModal = () => (
-    <Modal 
-      visible={modalStates.confirm} 
-      animationType="slide" 
-      transparent={true}
-      onRequestClose={() => toggleModal('confirm', false)}
-    >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Confirmer la commande</Text>
-            <TouchableOpacity onPress={() => toggleModal('confirm', false)}>
-              <Icon name="close" size={24} color="#000" />
-            </TouchableOpacity>
-          </View>
-          
-          <Text style={styles.modalText}>
-            Total: {getTotal().toLocaleString()} FCFA
-          </Text>
-          <TouchableOpacity style={styles.confirmButton} onPress={submitOrder}>
-            <Text style={styles.confirmButtonText}>Confirmer</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => toggleModal('confirm', false)}
-          >
-            <Text style={styles.cancelButtonText}>Annuler</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-
-  const ProductDetailsModal = () => {
-    if (!selectedProduct) return null;
-    
-    return (
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalStates.productDetails}
-        onRequestClose={() => {
-          // Fermer uniquement quand l'utilisateur le demande
-          toggleModal('productDetails', false);
-          resetProductModalStates();
-        }}
-      >
-        <View style={styles.detailsModalContainer}>
-          <View style={styles.detailsModalContent}>
-            <TouchableOpacity
-              style={styles.closeModalButton}
-              onPress={() => {
-                toggleModal('productDetails', false);
-                resetProductModalStates();
-              }}
-            >
-              <Icon name="close" size={24} color="#2563EB" />
-            </TouchableOpacity>
-            <View style={styles.carouselContainer}>
-              <Image
-                source={{ uri: selectedProduct.formats[currentImageIndex]?.image }}
-                style={styles.detailsImage}
-              />
-              <View style={styles.dotIndicators}>
-                {selectedProduct.formats.map((_, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.dot,
-                      index === currentImageIndex && styles.dotActive
-                    ]}
-                  />
-                ))}
-              </View>
-            </View>
-            <Text style={styles.detailsProductName}>{selectedProduct.name}</Text>
-            <Text style={styles.detailsSupplier}>{selectedProduct.supplier}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.formatsContainer}>
-                {selectedProduct.formats.map((format, index) => (
-                  <TouchableOpacity
-                    key={format.id}
-                    style={[
-                      styles.formatButton,
-                      selectedFormat?.id === format.id && styles.formatButtonSelected
-                    ]}
-                    onPress={() => {
-                      setSelectedFormat(format);
-                      setCurrentImageIndex(index);
-                    }}
-                  >
-                    <Text style={[
-                      styles.formatName,
-                      selectedFormat?.id === format.id && styles.formatTextSelected
-                    ]}>
-                      {format.name}
-                    </Text>
-                    <Text style={[
-                      styles.formatPrice,
-                      selectedFormat?.id === format.id && styles.formatTextSelected
-                    ]}>
-                      {parseInt(format.price || 0).toLocaleString()} FCFA
-                    </Text>
-                    <Text style={[
-                      styles.formatStock,
-                      selectedFormat?.id === format.id && styles.formatTextSelected
-                    ]}>
-                      Stock: {format.stock}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-            <View style={styles.quantityContainer}>
-              <TouchableOpacity
-                style={styles.quantityButton}
-                onPress={() => setQuantity(Math.max(1, quantity - 1))}
-              >
-                <Icon name="remove" size={20} color="#2563EB" />
-              </TouchableOpacity>
-              <Text style={styles.quantityText}>{quantity}</Text>
-              <TouchableOpacity
-                style={styles.quantityButton}
-                onPress={() => setQuantity(quantity + 1)}
-              >
-                <Icon name="add" size={20} color="#2563EB" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.detailsFooter}>
-              <Text style={styles.detailsTotal}>
-                Total: {selectedFormat ? (parseInt(selectedFormat.price || 0) * quantity).toLocaleString() : 0} FCFA
-              </Text>
-              <TouchableOpacity
-                style={[
-                  styles.addToCartButton,
-                  !selectedFormat && styles.addToCartButtonDisabled
-                ]}
-                onPress={() => {
-                  if (selectedFormat) {
-                    addToCart(selectedProduct, selectedFormat, quantity);
-                  }
-                }}
-                disabled={!selectedFormat}
-              >
-                <Text style={styles.addToCartButtonText}>Ajouter au panier</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity
-              style={[styles.finishButton, {marginTop: 15}]}
-              onPress={() => {
-                toggleModal('productDetails', false);
-                resetProductModalStates();
-                if (cart.length > 0) {
-                  toggleModal('cart', true);
-                }
-              }}
-            >
-              <Text style={styles.finishButtonText}>Terminer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    );
-  };
-
-  const renderProductCard = ({ item }) => (
+  const renderProductCard = useCallback(({ item }) => (
     <TouchableOpacity
       style={styles.productCard}
-      onPress={() => {
-        setSelectedProduct(item);
-        setSelectedFormat(null);
-        setQuantity(1);
-        setCurrentImageIndex(0);
-        toggleModal('productDetails', true);
-      }}
+      onPress={() => openProductDetails(item)}
     >
-      <Image source={{ uri: item.formats[0]?.image }} style={styles.productImage} />
+      <Image
+        source={{ uri: item.formats[0]?.image || 'https://via.placeholder.com/120' }}
+        style={styles.productImage}
+      />
       <View style={styles.productInfo}>
         <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.categoryName}>{item.supplier_name}</Text>
+        <Text style={styles.supplierName}>{item.supplier_name || 'Fournisseur inconnu'}</Text>
         <View style={styles.priceContainer}>
-          <Text style={styles.price}>
-            {parseInt(item.formats[0]?.price || 0).toLocaleString()} FCFA
-          </Text>
-          <View style={styles.stockContainer}>
-            <Icon name="inventory" size={14} color="#666" />
-            <Text style={styles.stockText}>{item.formats[0]?.stock || 0}</Text>
-          </View>
+          <Text style={styles.price}>{parseInt(item.formats[0]?.price || 0).toLocaleString()} FCFA</Text>
+          <Text style={styles.stock}>{item.formats[0]?.stock || 0} en stock</Text>
         </View>
       </View>
     </TouchableOpacity>
-  );
+  ), [openProductDetails]);
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Erreur : {error}</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.retryText}>Se reconnecter</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor="#2563EB" barStyle="light-content" />
-        <View style={styles.header}>
-          <View style={styles.titleContainer}>
-            <Icon name="menu" size={24} color="#fff" />
-            <Text style={styles.title}>Catalogue</Text>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.container}>
+          <StatusBar backgroundColor="#2563EB" barStyle="light-content" />
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Supply</Text>
+            <View style={styles.headerActions}>
+              <TouchableOpacity style={styles.headerButton} onPress={() => toggleModal('filter', true)}>
+                <Icon name="filter-list" size={24} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.headerButton} onPress={() => toggleModal('map', true)}>
+                <Icon name="map" size={24} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.headerButton} onPress={() => toggleModal('cart', true)}>
+                <Icon name="shopping-cart" size={24} color="#fff" />
+                {cart.length > 0 && (
+                  <View style={styles.cartBadge}>
+                    <Text style={styles.cartBadgeText}>{cart.length}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
-          <TouchableOpacity 
-            style={styles.cartButton} 
-            onPress={() => toggleModal('cart', true)}
-          >
-            <Icon name="shopping-cart" size={24} color="#fff" />
-            {cart.length > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{cart.length}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => toggleModal('filter', true)}
-          >
-            <Icon name="filter-list" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <Icon name="search" size={24} color="#666" />
+
+          <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
-              placeholder="Rechercher un produit"
+              placeholder="Rechercher..."
               value={searchText}
               onChangeText={setSearchText}
             />
           </View>
-        </View>
-        <View style={styles.categoriesContainer}>
+
           <FlatList
             horizontal
             data={categories}
@@ -713,52 +508,225 @@ const ProductsScreen = () => {
               <TouchableOpacity
                 style={[
                   styles.categoryButton,
-                  selectedCategory === item.name && styles.categoryButtonSelected,
+                  { width: 120, height: 50 },
+                  selectedCategory === item.name && styles.categoryButtonActive
                 ]}
                 onPress={() => setSelectedCategory(item.name)}
               >
-                <Icon
-                  name={item.icon}
-                  size={20}
-                  color={selectedCategory === item.name ? '#fff' : '#2563EB'}
-                />
+                <Icon name={item.icon} size={20} color={selectedCategory === item.name ? '#2563EB' : '#666'} />
                 <Text
                   style={[
-                    styles.categoryButtonText,
-                    selectedCategory === item.name && styles.categoryButtonTextSelected,
+                    styles.categoryText,
+                    selectedCategory === item.name && styles.categoryTextActive
                   ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
                 >
                   {item.name}
                 </Text>
               </TouchableOpacity>
             )}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesList}
+            contentContainerStyle={styles.categoryList}
           />
-        </View>
-        <FlatList
-          data={filteredProducts}
-          renderItem={renderProductCard}
-          keyExtractor={item => item.id.toString()}
-          numColumns={2}
-          contentContainerStyle={styles.productList}
-          showsVerticalScrollIndicator={false}
-        />
-        <FilterModal
-          visible={modalStates.filter}
-          onClose={() => toggleModal('filter', false)}
-          onApplyFilters={() => toggleModal('filter', false)}
-          filters={filters}
-          setFilters={setFilters}
-        />
-        <CartModal />
-        <ConfirmModal />
-        <ProductDetailsModal />
-      </SafeAreaView>
-    </SafeAreaProvider>
+
+          {isLoading && !refreshing ? (
+            <ActivityIndicator size="large" color="#2563EB" style={styles.loader} />
+          ) : (
+            <FlatList
+              data={filteredProducts}
+              renderItem={renderProductCard}
+              keyExtractor={item => item.id.toString()}
+              numColumns={2}
+              contentContainerStyle={styles.productList}
+              ListEmptyComponent={<Text style={styles.emptyText}>Aucun produit trouvé</Text>}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+            />
+          )}
+
+          <FilterModal
+            visible={modalStates.filter}
+            onClose={() => toggleModal('filter', false)}
+            onApplyFilters={() => toggleModal('filter', false)}
+            filters={filters}
+            setFilters={setFilters}
+          />
+
+          <Modal visible={modalStates.cart} animationType="slide" transparent>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Panier</Text>
+                {cart.length === 0 ? (
+                  <Text style={styles.emptyText}>Panier vide</Text>
+                ) : (
+                  <>
+                    <FlatList
+                      data={cart}
+                      keyExtractor={item => item.id}
+                      renderItem={({ item }) => (
+                        <View style={styles.cartItem}>
+                          <Image source={{ uri: item.format.image }} style={styles.cartItemImage} />
+                          <View style={styles.cartItemInfo}>
+                            <Text style={styles.cartItemName}>{item.name}</Text>
+                            <Text style={styles.cartItemPrice}>
+                              {parseFloat(item.format.price).toLocaleString('fr-FR')} FCFA x {item.quantity}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+                    />
+                    <Text style={styles.totalText}>Total: {getTotal()} FCFA</Text>
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() => {
+                        toggleModal('cart', false);
+                        toggleModal('confirm', true);
+                      }}
+                    >
+                      <Text style={styles.actionButtonText}>Commander</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+                <TouchableOpacity style={styles.closeButton} onPress={() => toggleModal('cart', false)}>
+                  <Text style={styles.closeButtonText}>Fermer</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal visible={modalStates.confirm} animationType="slide" transparent>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Confirmation</Text>
+                <Text style={styles.totalText}>Total: {getTotal()} FCFA</Text>
+                <TouchableOpacity style={styles.actionButton} onPress={submitOrder} disabled={isLoading}>
+                  {isLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.actionButtonText}>Confirmer</Text>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.closeButton} onPress={() => toggleModal('confirm', false)}>
+                  <Text style={styles.closeButtonText}>Annuler</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal visible={modalStates.productDetails} animationType="slide" transparent>
+            {selectedProduct && (
+              <View style={styles.modalOverlay}>
+                <View style={styles.productModalContent}>
+                  <TouchableOpacity
+                    style={styles.closeIcon}
+                    onPress={() => toggleModal('productDetails', false)}
+                  >
+                    <Icon name="close" size={24} color="#2563EB" />
+                  </TouchableOpacity>
+
+                  <Image
+                    source={{ uri: selectedFormat?.image || selectedProduct.formats[0].image }}
+                    style={styles.productDetailImage}
+                  />
+
+                  <Text style={styles.productDetailName}>{selectedProduct.name}</Text>
+
+                  <View style={styles.formatContainer}>
+                    <Text style={styles.formatLabel}>Choisir un format :</Text>
+                    <Picker
+                      selectedValue={selectedFormat?.id}
+                      onValueChange={(itemValue) => {
+                        const format = selectedProduct.formats.find(f => f.id === itemValue);
+                        setSelectedFormat(format);
+                        setCurrentImageIndex(selectedProduct.formats.findIndex(f => f.id === itemValue));
+                      }}
+                      style={styles.formatPicker}
+                    >
+                      {selectedProduct.formats.map((format) => (
+                        <Picker.Item
+                          key={format.id}
+                          label={`${format.taille} - ${format.couleur} (${parseFloat(format.price).toLocaleString('fr-FR')} FCFA)`}
+                          value={format.id}
+                        />
+                      ))}
+                    </Picker>
+                  </View>
+
+                  <View style={styles.quantitySelector}>
+                    <TouchableOpacity
+                      style={styles.quantityButton}
+                      onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                    >
+                      <Icon name="remove" size={20} color="#2563EB" />
+                    </TouchableOpacity>
+                    <Text style={styles.quantityText}>{quantity}</Text>
+                    <TouchableOpacity
+                      style={styles.quantityButton}
+                      onPress={() => setQuantity(quantity + 1)}
+                    >
+                      <Icon name="add" size={20} color="#2563EB" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.productTotalText}>
+                    Total: {calculateProductTotal()} FCFA
+                  </Text>
+
+                  <TouchableOpacity
+                    style={[styles.actionButton, !selectedFormat && styles.actionButtonDisabled]}
+                    onPress={() => selectedFormat && addToCart(selectedProduct, selectedFormat, quantity)}
+                    disabled={!selectedFormat}
+                  >
+                    <Text style={styles.actionButtonText}>Ajouter au panier</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </Modal>
+
+          <Modal visible={modalStates.map} animationType="slide" transparent>
+            <View style={styles.modalOverlay}>
+              <View style={styles.mapModalContent}>
+                <Text style={styles.modalTitle}>Localisation des fournisseurs</Text>
+                <MapView
+                  style={styles.map}
+                  initialRegion={{
+                    latitude: parseFloat(products[0]?.supplier_latitude) || 6.5244,
+                    longitude: parseFloat(products[0]?.supplier_longitude) || 3.3792,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
+                  }}
+                >
+                  {products.map((product) => (
+                    product.supplier_latitude && product.supplier_longitude && (
+                      <Marker
+                        key={product.id}
+                        coordinate={{
+                          latitude: parseFloat(product.supplier_latitude),
+                          longitude: parseFloat(product.supplier_longitude),
+                        }}
+                        title={product.supplier_name || 'Fournisseur'}
+                        description={`${product.supplier_type || ''} - ${product.supplier_commune || ''}`}
+                      />
+                    )
+                  ))}
+                </MapView>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => toggleModal('map', false)}
+                >
+                  <Text style={styles.closeButtonText}>Fermer</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -772,107 +740,84 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  title: {
+  headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
   },
-  cartButton: {
-    position: 'relative',
+  headerActions: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  headerButton: {
     padding: 8,
   },
-  badge: {
+  cartBadge: {
     position: 'absolute',
-    right: 0,
     top: 0,
+    right: 0,
     backgroundColor: '#EF4444',
-    borderRadius: 12,
-    minWidth: 20,
+    borderRadius: 10,
+    width: 20,
     height: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  badgeText: {
+  cartBadgeText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
   },
   searchContainer: {
     padding: 16,
-    backgroundColor: '#2563EB',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 12,
   },
   searchInput: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
     fontSize: 16,
+    elevation: 2,
   },
-  categoriesContainer: {
-    marginVertical: 16,
-  },
-  categoriesList: {
+  categoryList: {
     paddingHorizontal: 16,
-    gap: 8,
+    paddingVertical: 8,
   },
   categoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    borderRadius: 20,
     marginRight: 8,
-    gap: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: '#fff',
+    elevation: 1,
+    justifyContent: 'center',
   },
-  categoryButtonSelected: {
-    backgroundColor: '#2563EB',
+  categoryButtonActive: {
+    backgroundColor: '#DBEAFE',
   },
-  categoryButtonText: {
-    color: '#2563EB',
+  categoryText: {
+    marginLeft: 8,
     fontSize: 14,
-    fontWeight: '600',
+    color: '#666',
   },
-  categoryButtonTextSelected: {
-    color: '#fff',
+  categoryTextActive: {
+    color: '#2563EB',
+    fontWeight: 'bold',
   },
   productList: {
     padding: 16,
-    gap: 16,
   },
   productCard: {
     width: cardWidth,
     backgroundColor: '#fff',
     borderRadius: 16,
     margin: 8,
-    overflow: 'hidden',
     elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    overflow: 'hidden',
   },
   productImage: {
     width: '100%',
-    height: 150,
+    height: 120,
     resizeMode: 'cover',
   },
   productInfo: {
@@ -880,14 +825,13 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#1F2937',
-    marginBottom: 4,
   },
-  categoryName: {
-    fontSize: 14,
+  supplierName: {
+    fontSize: 12,
     color: '#6B7280',
-    marginBottom: 8,
+    marginVertical: 4,
   },
   priceContainer: {
     flexDirection: 'row',
@@ -895,382 +839,231 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   price: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#2563EB',
   },
-  stockContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  stockText: {
-    fontSize: 14,
+  stock: {
+    fontSize: 12,
     color: '#666',
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    padding: 20,
   },
   modalContent: {
     backgroundColor: '#fff',
+    borderRadius: 20,
     padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  filterModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    maxHeight: '90%',
+  },
+  mapModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
     maxHeight: '80%',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
+    color: '#1F2937',
+    marginBottom: 16,
   },
   cartItem: {
     flexDirection: 'row',
-    marginBottom: 15,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
     padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   cartItemImage: {
-    width: 80,
-    height: 80,
+    width: 60,
+    height: 60,
     borderRadius: 8,
   },
   cartItemInfo: {
     marginLeft: 12,
     flex: 1,
-    justifyContent: 'center',
   },
   cartItemName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontWeight: '600',
   },
   cartItemPrice: {
     fontSize: 14,
     color: '#2563EB',
-    marginBottom: 4,
-  },
-  cartItemQuantity: {
-    fontSize: 14,
-    color: '#666',
+    marginTop: 4,
   },
   totalText: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginVertical: 15,
-    textAlign: 'right',
     color: '#2563EB',
+    textAlign: 'right',
+    marginVertical: 16,
   },
-  validateButton: {
+  actionButton: {
     backgroundColor: '#2563EB',
-    padding: 15,
+    padding: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 10,
   },
-  validateButtonText: {
+  actionButtonDisabled: {
+    backgroundColor: '#93C5FD',
+  },
+  actionButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
   closeButton: {
-    padding: 15,
-    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#2563EB',
+    marginTop: 8,
   },
   closeButtonText: {
     color: '#2563EB',
     fontSize: 16,
     fontWeight: '600',
   },
-  confirmButton: {
-    backgroundColor: '#10B981',
-    padding: 15,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  confirmButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  cancelButton: {
-    padding: 15,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#EF4444',
-  },
-  cancelButtonText: {
-    color: '#EF4444',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  carouselContainer: {
-    position: 'relative',
-    width: '100%',
-    height: 200,
-    marginBottom: 15,
-  },
-  carouselControls: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-  },
-  carouselButton: {
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: 20,
-    padding: 8,
-  },
-  dotIndicators: {
-    position: 'absolute',
-    bottom: 10,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  dotActive: {
-    backgroundColor: '#fff',
-  },
-  detailsModalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  detailsModalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    maxHeight: '90%',
-  },
-  closeModalButton: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-    zIndex: 1,
-  },
-  detailsImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 16,
-  },
-  detailsProductName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#1F2937',
-  },
-  detailsSupplier: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 15,
-  },
-  formatsContainer: {
-    flexDirection: 'row',
-    gap: 10,
-    alignContent:'center'
-  },
-  formatButton: {
-    width: 120,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  formatButtonSelected: {
-    backgroundColor: '#2563EB',
-    borderColor: '#2563EB',
-  },
-  formatName: {
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  formatPrice: {
-    color: '#2563EB',
-    marginBottom: 4,
-  },
-  formatStock: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  formatTextSelected: {
-    color: '#fff',
-  },
-  quantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 15,
-  },
-  quantityButton: {
-    padding: 10,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 10,
-  },
-  quantityText: {
-    marginHorizontal: 20,
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  detailsFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  detailsTotal: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#2563EB',
-  },
-  addToCartButton: {
-    backgroundColor: '#2563EB',
-    borderRadius: 12,
-    padding: 12,
-    paddingHorizontal: 15,
-  },
-  addToCartButtonDisabled: {
-    opacity: 0.5,
-  },
-  addToCartButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
-
-  filterButton: {
-    padding: 8,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  modalContent: {
+  productModalContent: {
     backgroundColor: '#fff',
     borderRadius: 20,
     padding: 20,
     maxHeight: '80%',
   },
-  modalTitle: {
-    fontSize: 20,
+  closeIcon: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+    zIndex: 1,
+  },
+  productDetailImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  productDetailName: {
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 15,
+    color: '#1F2937',
+    marginBottom: 16,
+  },
+  formatContainer: {
+    marginBottom: 16,
+  },
+  formatLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  formatPicker: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+  },
+  quantitySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 16,
+  },
+  quantityButton: {
+    padding: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+  },
+  quantityText: {
+    fontSize: 18,
+    marginHorizontal: 16,
+    fontWeight: 'bold',
   },
   filterLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     marginBottom: 8,
   },
-  filterInput: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+  slider: {
+    marginBottom: 16,
+  },
+  pickerContainer: {
+    marginBottom: 16,
+    backgroundColor: '#F3F4F6',
     borderRadius: 12,
-    padding: 10,
-    marginBottom: 15,
   },
-  filterCheckboxContainer: {
+  picker: {
+    backgroundColor: 'transparent',
+  },
+  switchContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
-  },
-  filterCheckboxLabel: {
-    marginLeft: 8,
-    fontSize: 16,
+    marginBottom: 16,
   },
   applyButton: {
     backgroundColor: '#2563EB',
-    padding: 15,
+    padding: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 10,
   },
   applyButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  closeButton: {
-    padding: 15,
-    borderRadius: 12,
+  resetButton: {
+    padding: 16,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#2563EB',
+    marginTop: 8,
   },
-  closeButtonText: {
-    color: '#2563EB',
+  resetButtonText: {
+    color: '#EF4444',
     fontSize: 16,
     fontWeight: '600',
   },
-  picker: {
-    marginBottom: 15,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
+  emptyText: {
+    textAlign: 'center',
+    color: '#6B7280',
+    fontSize: 16,
+    marginVertical: 20,
   },
-
-  //Modal
-  sliderContainer: {
-    marginBottom: 20,
-    paddingHorizontal: 10,
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
   },
-  slider: {
+  productTotalText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2563EB',
+    textAlign: 'center',
+    marginVertical: 12,
+  },
+  map: {
     width: '100%',
-    height: 40,
+    height: 400,
+    borderRadius: 12,
+    marginBottom: 16,
   },
-  starsContainer: {
-    flexDirection: 'row',
+  errorContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
   },
-  starButton: {
-    padding: 5,
-  },
-  pickerContainer: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    marginBottom: 15,
-    overflow: 'hidden',
-  },
-  picker: {
-    backgroundColor: 'transparent',
-  },
-  filterSwitchContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 10,
-  },
-  filterSwitchLabel: {
+  errorText: {
+    color: 'red',
     fontSize: 16,
-    color: '#1F2937',
+    marginBottom: 10,
+  },
+  retryText: {
+    color: '#2563EB',
+    fontSize: 16,
   },
 });
 

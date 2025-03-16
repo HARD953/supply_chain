@@ -18,6 +18,7 @@ import { TextInput } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
+import { useAuth } from './AuthContext'; // Importez useAuth
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,6 +28,8 @@ const LoginScreen = ({ navigation }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+
+  const { login } = useAuth(); // Utilisez la fonction login du AuthContext
 
   const handleLogin = async () => {
     Keyboard.dismiss();
@@ -39,16 +42,11 @@ const LoginScreen = ({ navigation }) => {
       return;
     }
 
-    // Vérification des identifiants
-    if (
-      (email === 'issa@gmail.com' && password === 'issa01') ||
-      (email === 'romy@gmail.com' && password === 'romy01')
-    ) {
-      // Connexion réussie, naviguer vers le tableau de bord
-      navigation.navigate('Dashboard');
-    } else {
-      // Identifiants incorrects
-      Alert.alert('Erreur de connexion', 'Email ou mot de passe incorrect');
+    try {
+      await login(email, password); // Appelez la fonction login de AuthContext
+      navigation.navigate('Main'); // Redirigez après une connexion réussie
+    } catch (error) {
+      Alert.alert('Erreur de connexion', error.message || 'Email ou mot de passe incorrect');
     }
   };
 
@@ -93,12 +91,11 @@ const LoginScreen = ({ navigation }) => {
                 label="Adresse email professionnelle"
                 value={email}
                 onChangeText={setEmail}
+
                 style={[styles.input, isEmailFocused && styles.inputFocused]}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 mode="outlined"
-                // onFocus={() => setIsEmailFocused(true)}
-                // onBlur={() => setIsEmailFocused(false)}
                 error={email.length > 0 && !validateEmail(email)}
                 theme={{
                   colors: {
@@ -115,11 +112,10 @@ const LoginScreen = ({ navigation }) => {
                 label="Mot de passe"
                 value={password}
                 onChangeText={setPassword}
+
                 style={[styles.input, isPasswordFocused && styles.inputFocused]}
                 secureTextEntry={!isPasswordVisible}
                 mode="outlined"
-                // onFocus={() => setIsPasswordFocused(true)}
-                // onBlur={() => setIsPasswordFocused(false)}
                 theme={{
                   colors: {
                     primary: '#2563EB',
@@ -138,7 +134,7 @@ const LoginScreen = ({ navigation }) => {
               />
 
               <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.7}>
-                <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
+                <Text style={styles.forgotPasswordText}>Mot de passe oublié ? </Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.loginButton} onPress={handleLogin} activeOpacity={0.8}>
@@ -336,5 +332,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-
 export default LoginScreen;

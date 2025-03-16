@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiLogin, refreshToken as refreshApiToken, getCurrentUser } from './api';
+import { login as apiLogin, refreshToken as refreshApiToken, getCurrentUser, logout as apiLogout } from './api';
 
 const AuthContext = createContext();
 
@@ -8,69 +8,105 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Charger l'utilisateur et les tokens au démarrage
   useEffect(() => {
-    const loadUser = async () => {
+    const loadAuthData = async () => {
       try {
-        const storedAccessToken = await AsyncStorage.getItem('accessToken');
-        const storedRefreshToken = await AsyncStorage.getItem('refreshToken');
+        const [storedAccessToken, storedRefreshToken] = await AsyncStorage.multiGet([
+          'accessToken',
+          'refreshToken'
+        ]);
 
-        if (storedAccessToken) {
-          setAccessToken(storedAccessToken);
-          setRefreshToken(storedRefreshToken);
-          const userData = await getCurrentUser();
-          setUser(userData);
+        if (storedAccessToken[1] && storedRefreshToken[1]) {
+          setAccessToken(storedAccessToken[1]);
+          setRefreshToken(storedRefreshToken[1]);
+          
+          try {
+            const userData = await getCurrentUser();
+            setUser(userData);
+          } catch (error) {
+            const newAccessToken = await refreshAccessToken(storedRefreshToken[1]);
+            const refreshedUserData = await getCurrentUser();
+            setAccessToken(newAccessToken);
+            setUser(refreshedUserData);
+          }
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des informations utilisateur', error);
+        console.error('Erreur lors du chargement initial:', error);
+        await AsyncStorage.multiRemove(['accessToken', 'refreshToken']);
+        setUser(null);
+        setAccessToken(null);
+        setRefreshToken(null);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    loadUser();
+    loadAuthData();
   }, []);
 
-  // Fonction de connexion
   const login = async (email, password) => {
     try {
       const response = await apiLogin(email, password);
-      await AsyncStorage.setItem('accessToken', response.access);
-      await AsyncStorage.setItem('refreshToken', response.refresh);
-      setAccessToken(response.access);
-      setRefreshToken(response.refresh);
-      setUser(response.user);
+      const { access, refresh, user_id, email: userEmail, user_type, username } = response;
+      const userData = { user_id, email: userEmail, user_type, username };
+
+      await AsyncStorage.multiSet([
+        ['accessToken', access],
+        ['refreshToken', refresh],
+      ]);
+
+      setAccessToken(access);
+      setRefreshToken(refresh);
+      setUser(userData);
+      return userData;
     } catch (error) {
-      console.error('Erreur de connexion', error);
+      throw error;
     }
   };
 
-  // Fonction de déconnexion
   const logout = async () => {
-    await AsyncStorage.removeItem('accessToken');
-    await AsyncStorage.removeItem('refreshToken');
-    setAccessToken(null);
-    setRefreshToken(null);
-    setUser(null);
-  };
-
-  // Fonction pour rafraîchir le token automatiquement
-  const refreshAccessToken = async () => {
     try {
-      if (!refreshToken) return;
-      const response = await refreshApiToken(refreshToken);
-      await AsyncStorage.setItem('accessToken', response.access);
-      setAccessToken(response.access);
+      if (refreshToken) {
+        await apiLogout(refreshToken);
+      }
     } catch (error) {
-      console.error('Erreur lors du rafraîchissement du token', error);
-      logout(); // Déconnecter si le refresh échoue
+      console.error('Erreur lors de la déconnexion:', error);
+    } finally {
+      await AsyncStorage.multiRemove(['accessToken', 'refreshToken']);
+      setAccessToken(null);
+      setRefreshToken(null);
+      setUser(null);
     }
   };
 
-  return (
-    <AuthContext.Provider value={{ user, accessToken, refreshToken, login, logout, refreshAccessToken }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const refreshAccessToken = async (token = refreshToken) => {
+    try {
+      if (!token) throw new Error('Aucun refresh token disponible');
+      const response = await refreshApiToken(token);
+      const { access } = response;
+      await AsyncStorage.setItem('accessToken', access);
+      setAccessToken(access);
+      return access;
+    } catch (error) {
+      console.error('Erreur lors du rafraîchissement du token:', error);
+      await logout();
+      throw error;
+    }
+  };
+
+  const value = {
+    user,
+    accessToken,
+    refreshToken,
+    login,
+    logout,
+    refreshAccessToken,
+    isLoading,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => useContext(AuthContext);

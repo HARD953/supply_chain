@@ -1,31 +1,32 @@
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { StyleSheet } from 'react-native';
-import Navigators from './src/Navigator';
-import OrderHistoryScreen from './src/OrderHistoryScreen';
-import ProductCatalog from './src/ProductCatalog'
-import OrderHistory from './src/OrderHistory'
-import SupplierProductsScreen from './src/ListeProduit'
-import SurfaceCollectScreen from './src/collecte'
-import CollectionPage from './src/CollectionPage'
-import StrategicCollectionPage from './src/DetailedCollectionPage'
-import * as SplashScreen from 'expo-splash-screen' // Importez la bibliothèque   
-import StoreLocations from './src/StoreLocations' 
-import ScheduleOrderScreen from './src/ScheduleOrderScreen' 
-import CommercialDataCollection from './src/CommercialDataCollection'
-import HomeDashboard from './src/HomeDashboard' 
-import CommercialDataRecap from './src/CommercialDataRecap'
+import { StyleSheet, ActivityIndicator, View } from 'react-native';
+import { AuthProvider, useAuth } from './src/AuthContext';
+import Navigators from './src/Navigator'; // Importation par défaut
+
+function AppNavigator() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1E40AF" />
+      </View>
+    );
+  }
+
+  return <Navigators user={user} isLoading={isLoading} />;
+}
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <StatusBar 
-          style="light" 
-          backgroundColor="#1E40AF" 
-        />
-        <Navigators />
-      </SafeAreaView>
+      <AuthProvider>
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+          <StatusBar style="light" backgroundColor="#1E40AF" />
+          <AppNavigator />
+        </SafeAreaView>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
@@ -33,6 +34,12 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#fff',
   },
 });
