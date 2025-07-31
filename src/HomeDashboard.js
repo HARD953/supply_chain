@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,70 +6,72 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
-  Platform,
-  Image
+  Image,
+  ActivityIndicator,
+  Alert,
+  Modal,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Animatable from 'react-native-animatable';
 import SelectionModal from './SelectionModal';
 import UpdateModal from './UpdateModal';
+import { useAuth } from './AuthContext';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const HomeDashboard = ({ navigation }) => {
+  const { logout, accessToken } = useAuth();
   const [activeTab, setActiveTab] = useState('surfaces');
   const [modalVisible, setModalVisible] = useState(false);
   const [updateModalVisible, setUpdateModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [statsData, setStatsData] = useState([]);
   const [shopsData, setShopsData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const typeColors = {
-    'BRANDED': ["#EC4899", "#DB2777"],
-    'SUPÉRETTE': ["#8B5CF6", "#6D28D9"],
-    'SUPERMARCHÉ': ["#10B981", "#059669"],
-    'QUINCAILLERIE': ["#F59E0B", "#D97706"],
-    'BOUTIQUE': ["#3B82F6", "#1D4ED8"],
-    'GROSSISTE': ["#6366F1", "#4F46E5"]
-  };
+  const fetchData = useCallback(async () => {
+    if (!accessToken) {
+      navigation.navigate('LoginScreen');
+      return;
+    }
 
-  const typeIcons = {
-    'BRANDED': "people",
-    'SUPÉRETTE': "inventory",
-    'SUPERMARCHÉ': "store",
-    'QUINCAILLERIE': "build",
-    'BOUTIQUE': "store",
-    'GROSSISTE': "local-shipping"
-  };
+    setLoading(true);
+    setError(null);
+
+    try {
+      const endpoint =
+        activeTab === 'surfaces' ? 'shops' : activeTab === 'produits' ? 'productscollecte' : 'fournisseurs';
+      const response = await fetch(`https://supply-3.onrender.com/api/${endpoint}/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          logout();
+          navigation.navigate('LoginScreen');
+          return;
+        }
+        throw new Error('Erreur lors de la récupération des données');
+      }
+
+      const data = await response.json();
+      setShopsData(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message);
+      setShopsData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab, accessToken, navigation, logout]);
 
   useEffect(() => {
-    fetchStats();
     fetchData();
-  }, [activeTab]);
-
-  const fetchStats = async () => {
-    try {
-      const response = await fetch('https://supply-3.onrender.com/api/stats/by-type/');
-      const data = await response.json();
-      setStatsData(data);
-    } catch (error) {
-      console.error('Erreur lors de la récupération des statistiques:', error);
-    }
-  };
-
-  const fetchData = async () => {
-    try {
-      let endpoint = 'shops';
-      if (activeTab === 'fournisseurs') endpoint = 'fournisseurs'; // À remplacer par l'endpoint réel
-      if (activeTab === 'produits') endpoint = 'productscollecte'; // À remplacer par l'endpoint réel
-
-      const response = await fetch(`https://supply-3.onrender.com/api/${endpoint}/`);
-      const data = await response.json();
-      setShopsData(data);
-    } catch (error) {
-      console.error('Erreur lors de la récupération des données:', error);
-    }
-  };
+  }, [fetchData]);
 
   const handleItemPress = (item) => {
     setSelectedItem(item);
@@ -77,88 +79,146 @@ const HomeDashboard = ({ navigation }) => {
   };
 
   const handleUpdateItem = (updatedItem) => {
-    setShopsData(prevData => 
-      prevData.map(item => 
-        item.id === updatedItem.id ? updatedItem : item
-      )
+    setShopsData((prevData) =>
+      prevData.map((item) => (item.id === updatedItem.id ? updatedItem : item))
     );
   };
 
-  const renderStatCard = (title, value, icon, colors) => (
-    <LinearGradient
-      colors={colors}
-      style={styles.statCard}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-    >
-      <View style={styles.statCardContent}>
-        <View style={styles.statCardIcon}>
-          <MaterialIcons name={icon} size={24} color="#fff" />
-        </View>
-        <Text style={styles.statCardTitle}>{title}</Text>
-        <Text style={styles.statCardValue}>{value}</Text>
-      </View>
-    </LinearGradient>
-  );
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigation.navigate('Main');
+    } catch (error) {
+      Alert.alert('Erreur', 'Une erreur est survenue lors de la déconnexion.');
+    }
+  };
 
-  const renderDynamicStatCards = () => {
-    return statsData.map((stat) => {
-      const type = stat.typecommerce.toUpperCase();
-      return renderStatCard(
-        type,
-        stat.total,
-        typeIcons[type] || "store",
-        typeColors[type] || ["#6B7280", "#4B5563"]
-      );
+  const calculateCategoryTotals = () => {
+    const totals = {};
+    shopsData.forEach((item) => {
+      const category = activeTab === 'surfaces' ? item.typecommerce : item.category;
+      if (category) {
+        totals[category] = (totals[category] || 0) + 1;
+      }
     });
+    return totals;
+  };
+
+  const renderTotalCard = () => {
+    const categoryTotals = calculateCategoryTotals();
+    const totalItems = shopsData.length;
+    const categories = Object.entries(categoryTotals);
+    const midPoint = Math.ceil(categories.length / 2);
+    const leftColumn = categories.slice(0, midPoint);
+    const rightColumn = categories.slice(midPoint);
+
+    return (
+      <Animatable.View animation="fadeIn" duration={600} style={styles.totalCardContainer}>
+        <LinearGradient
+          colors={['#3B82F6', '#1E3A8A']}
+          style={styles.totalCard}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          <View style={styles.totalCardContent}>
+            <MaterialIcons name="store" size={24} color="#fff" style={styles.totalCardIcon} />
+            <View style={styles.totalCardTextContainer}>
+              <Text style={styles.totalCardTitle}>
+                {activeTab === 'surfaces' ? 'Total Sites' : 'Total Produits'} ({totalItems})
+              </Text>
+              <View style={styles.categoryColumns}>
+                <View style={styles.column}>
+                  {leftColumn.map(([category, count]) => (
+                    <Text key={category} style={styles.categoryText}>
+                      {category}: {count}
+                    </Text>
+                  ))}
+                </View>
+                <View style={styles.column}>
+                  {rightColumn.map(([category, count]) => (
+                    <Text key={category} style={styles.categoryText}>
+                      {category}: {count}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+            </View>
+          </View>
+        </LinearGradient>
+      </Animatable.View>
+    );
   };
 
   const TabButton = ({ title, isActive, onPress }) => (
     <TouchableOpacity
       style={[styles.tabButton, isActive && styles.activeTabButton]}
       onPress={onPress}
+      activeOpacity={0.7}
     >
-      <Text style={[styles.tabButtonText, isActive && styles.activeTabButtonText]}>
-        {title}
-      </Text>
+      <Text style={[styles.tabButtonText, isActive && styles.activeTabButtonText]}>{title}</Text>
     </TouchableOpacity>
   );
 
   const renderList = () => (
-    <View style={styles.collectesList}>
-      {shopsData.map(item => (
-        <TouchableOpacity 
-          key={item.id}
-          style={styles.collecteItem}
-          onPress={() => handleItemPress(item)}
-        >
-          <View style={styles.shopItemContainer}>
-            {item.image && (
-              <Image 
-                source={{ uri: item.image }}
+    <Animatable.View animation="fadeInUp" duration={800} style={styles.collectesList}>
+      {shopsData.length === 0 && !loading ? (
+        <Text style={styles.emptyText}>Aucune donnée disponible</Text>
+      ) : (
+        shopsData.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={styles.collecteItem}
+            onPress={() => handleItemPress(item)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.shopItemContainer}>
+              <Image
+                source={{ uri: item.image || 'https://via.placeholder.com/50' }}
                 style={styles.shopImage}
+                onError={() => console.log(`Erreur de chargement de l'image pour ${item.name}`)}
               />
-            )}
-            <View style={styles.collecteInfo}>
-              <Text style={styles.collecteName}>{item.name}</Text>
-              <Text style={styles.collecteType}>{item.typecommerce}</Text>
-              <Text style={styles.shopOwner}>{item.owner_name}</Text>
+              <View style={styles.collecteInfo}>
+                <Text style={styles.collecteName} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text style={styles.collecteType}>
+                  {activeTab === 'produits' ? item.category : item.typecommerce}
+                </Text>
+                <Text style={styles.shopOwner}>
+                  {activeTab === 'produits' ? `Stock: ${item.stock}` : item.owner_name}
+                </Text>
+              </View>
             </View>
-          </View>
-          <View style={styles.collecteStatus}>
-            <Text style={[
-              styles.statusText,
-              { color: item.type === 'BRANDED' ? '#2563EB' : '#60A5FA' }
-            ]}>
-              {item.type}
-            </Text>
-            <Text style={styles.collecteDate}>{item.owner_phone}</Text>
-            
-          </View>
-        </TouchableOpacity>
-      ))}
-    </View>
+            <View style={styles.collecteStatus}>
+              <Text
+                style={[
+                  styles.statusText,
+                  { color: item.type === 'BRANDED' ? '#2563EB' : '#60A5FA' },
+                ]}
+              >
+                {activeTab === 'produits' ? item.price : item.type}
+              </Text>
+              <Text style={styles.collecteDate}>
+                {activeTab === 'produits' ? item.frequence_appr : item.owner_phone}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ))
+      )}
+    </Animatable.View>
   );
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <MaterialIcons name="error-outline" size={50} color="#EF4444" />
+        <Text style={styles.errorText}>Erreur : {error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={fetchData}>
+          <Text style={styles.retryButtonText}>Réessayer</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -168,59 +228,64 @@ const HomeDashboard = ({ navigation }) => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <MaterialIcons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Tableau de Bord</Text>
-        <TouchableOpacity 
-          onPress={() => setModalVisible(true)}
-          style={styles.addButton}
-        >
-          <MaterialIcons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('MapScreen1', { shopsData })} 
+            style={styles.mapButton}
+          >
+            <MaterialIcons name="map" size={24} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.addButton}>
+            <MaterialIcons name="add" size={24} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+            <MaterialIcons name="logout" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.statsGrid}>
-          {renderDynamicStatCards()}
-        </View>
-
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Collectes cette semaine</Text>
-        </View>
-
-        <View style={styles.recentCollectes}>
-          <Text style={styles.sectionTitle}>Liste des données</Text>
-          <View style={styles.tabsContainer}>
-            <TabButton 
-              title="Sites" 
-              isActive={activeTab === 'surfaces'} 
-              onPress={() => setActiveTab('surfaces')}
-            />
-            <TabButton 
-              title="Fournisseurs" 
-              isActive={activeTab === 'fournisseurs'} 
-              onPress={() => setActiveTab('fournisseurs')}
-            />
-            <TabButton 
-              title="Produits" 
-              isActive={activeTab === 'produits'} 
-              onPress={() => setActiveTab('produits')}
-            />
+        {loading ? (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color="#3B82F6" />
+            <Text style={styles.loadingText}>Chargement...</Text>
           </View>
-          {renderList()}
-        </View>
+        ) : (
+          <>
+            {renderTotalCard()}
+            <View style={styles.chartCard}>
+              <Text style={styles.chartTitle}>Collectes cette semaine</Text>
+              {/* Ajouter un graphique ici si nécessaire */}
+            </View>
+            <View style={styles.recentCollectes}>
+              <Text style={styles.sectionTitle}>Liste des données</Text>
+              <View style={styles.tabsContainer}>
+                <TabButton
+                  title="Sites"
+                  isActive={activeTab === 'surfaces'}
+                  onPress={() => setActiveTab('surfaces')}
+                />
+                <TabButton
+                  title="Produits"
+                  isActive={activeTab === 'produits'}
+                  onPress={() => setActiveTab('produits')}
+                />
+              </View>
+              {renderList()}
+            </View>
+          </>
+        )}
       </ScrollView>
 
-      <SelectionModal 
+      <SelectionModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         navigation={navigation}
       />
-
       {selectedItem && (
         <UpdateModal
           visible={updateModalVisible}
@@ -229,8 +294,9 @@ const HomeDashboard = ({ navigation }) => {
             setSelectedItem(null);
           }}
           item={selectedItem}
-          type={activeTab === 'surfaces' ? 'shops' : activeTab}
+          type={activeTab === 'surfaces' ? 'shops' : 'products'}
           onUpdate={handleUpdateItem}
+          imageUri={selectedItem.image}
         />
       )}
     </View>
@@ -240,66 +306,97 @@ const HomeDashboard = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#F9FAFB',
   },
   header: {
-    padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 50 : 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingTop: 40, // Static value instead of Platform.OS check
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#1E3A8A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   backButton: {
-    padding: 8,
+    padding: 6,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   headerTitle: {
     color: '#fff',
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  mapButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 6,
+    borderRadius: 6,
   },
   addButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    padding: 8,
-    borderRadius: 8,
+    padding: 6,
+    borderRadius: 6,
+  },
+  logoutButton: {
+    padding: 6,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   content: {
     padding: 16,
   },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  totalCardContainer: {
     marginBottom: 16,
   },
-  statCard: {
-    width: (width - 40) / 2,
-    height: height / 8,
-    marginBottom: 8,
+  totalCard: {
     borderRadius: 12,
-    
-    padding: 10,
+    padding: 16,
     elevation: 3,
     shadowColor: '#1E3A8A',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
-  statCardContent: {
+  totalCardContent: {
+    flexDirection: 'row',
     alignItems: 'flex-start',
   },
-  statCardIcon: {
+  totalCardIcon: {
+    marginRight: 12,
+    marginTop: 4,
+  },
+  totalCardTextContainer: {
+    flex: 1,
+  },
+  totalCardTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
     marginBottom: 8,
   },
-  statCardTitle: {
+  categoryColumns: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  column: {
+    flex: 1,
+    marginRight: 8,
+  },
+  categoryText: {
     color: '#fff',
     fontSize: 14,
-    opacity: 0.8,
+    fontWeight: '500',
     marginBottom: 4,
-  },
-  statCardValue: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
   },
   chartCard: {
     backgroundColor: '#fff',
@@ -310,59 +407,56 @@ const styles = StyleSheet.create({
     shadowColor: '#1E3A8A',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 4,
   },
   chartTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    fontWeight: '600',
     color: '#1E3A8A',
   },
   recentCollectes: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
     color: '#1E3A8A',
   },
   tabsContainer: {
     flexDirection: 'row',
     marginBottom: 16,
-    backgroundColor: '#f1f5f9',
-    borderRadius: 8,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
     padding: 4,
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 6,
+    borderRadius: 8,
     alignItems: 'center',
   },
   activeTabButton: {
     backgroundColor: '#fff',
+    elevation: 2,
     shadowColor: '#1E3A8A',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
-    elevation: 2,
   },
   tabButtonText: {
     fontSize: 14,
-    color: '#64748b',
+    color: '#64748B',
     fontWeight: '500',
   },
   activeTabButtonText: {
     color: '#1E3A8A',
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   collectesList: {
-    backgroundColor: '#fff',
     borderRadius: 8,
   },
   collecteItem: {
@@ -371,7 +465,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 8,
+    elevation: 1,
+    shadowColor: '#1E3A8A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   shopItemContainer: {
     flexDirection: 'row',
@@ -383,36 +485,81 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     marginRight: 12,
+    backgroundColor: '#E5E7EB',
   },
   collecteInfo: {
     flex: 1,
   },
   collecteName: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#1E3A8A',
     marginBottom: 4,
   },
   collecteType: {
     fontSize: 14,
-    color: '#64748b',
+    color: '#64748B',
+    fontWeight: '500',
   },
   shopOwner: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#6B7280',
     marginTop: 2,
   },
   collecteStatus: {
     alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   statusText: {
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '600',
     marginBottom: 4,
   },
   collecteDate: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: '#94A3B8',
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#3B82F6',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 16,
+    marginTop: 10,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  retryButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#3B82F6',
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#6B7280',
+    fontSize: 16,
+    padding: 20,
   },
 });
 

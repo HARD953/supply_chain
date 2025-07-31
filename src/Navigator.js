@@ -25,6 +25,8 @@ import BoutiqueDataCollection from './BoutiqueDataCollection';
 import ProduitDataCollection from './ProduitDataCollection';
 import FournisseurDataCollection from './FournisseurDataCollection';
 import BusinessTypeSelection from './BusinessTypeSelection';
+import MapScreen from './MapScreen';
+import MapScreen1 from './MapScreen1';
 
 const Stack = createStackNavigator();
 
@@ -40,7 +42,7 @@ function UnauthenticatedNavigator() {
 
 function AuthenticatedNavigator() {
   return (
-    <Stack.Navigator initialRouteName="Dashboard">
+    <Stack.Navigator initialRouteName="HomeDashboard">
       <Stack.Screen name="Dashboard" component={Dashboard} options={{ headerShown: false }} />
       <Stack.Screen name="ProductCatalog" component={ProductCatalog} options={{ headerShown: false }} />
       <Stack.Screen name="OrderHistory" component={OrderHistory} options={{ headerShown: false }} />
@@ -59,6 +61,8 @@ function AuthenticatedNavigator() {
       <Stack.Screen name="ProduitDataCollection" component={ProduitDataCollection} options={{ headerShown: false }} />
       <Stack.Screen name="FournisseurDataCollection" component={FournisseurDataCollection} options={{ headerShown: false }} />
       <Stack.Screen name="BusinessTypeSelection" component={BusinessTypeSelection} options={{ headerShown: false }} />
+      <Stack.Screen name="MapScreen" component={MapScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="MapScreen1" component={MapScreen1} options={{ headerShown: false }}/>
     </Stack.Navigator>
   );
 }

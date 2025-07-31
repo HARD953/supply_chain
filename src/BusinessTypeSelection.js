@@ -211,8 +211,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
   },
   headerGradient: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 40,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === 'ios' ? 30 : 20,
+    paddingBottom: 10,
     paddingHorizontal: 15,
   },
   headerContent: {
@@ -246,14 +246,14 @@ const styles = StyleSheet.create({
   menuItem: {
     width: width,
     height: height * 0.15,
-    marginVertical: 5,
+    marginVertical: 0,
   },
   menuGradient: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 20,
-    borderRadius: 10,
+    borderRadius: 0,
   },
   icon: {
     marginBottom: 10,

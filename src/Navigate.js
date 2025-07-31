@@ -28,7 +28,7 @@ const Stack = createStackNavigator();
 
 function UnauthenticatedNavigator() {
   return (
-    <Stack.Navigator initialRouteName="LoginScreen">
+    <Stack.Navigator initialRouteName="LoginCollecte">
       <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
       <Stack.Screen name="LoginCollecte" component={LoginCollecte} options={{ headerShown: false }} />
       <Stack.Screen name="SupplierSignUpScreen" component={SupplierSignUpScreen} options={{ headerShown: false }} />
@@ -39,7 +39,7 @@ function UnauthenticatedNavigator() {
 function AuthenticatedNavigator() {
   return (
     <Stack.Navigator initialRouteName="HomeDashboard">
-      <Stack.Screen name="Dashboard" component={Dashboard} options={{ headerShown: false }} />
+      <Stack.Screen name="HomeDashboard" component={Dashboard} options={{ headerShown: false }} />
       <Stack.Screen name="ProductCatalog" component={ProductCatalog} options={{ headerShown: false }} />
       <Stack.Screen name="OrderHistory" component={OrderHistory} options={{ headerShown: false }} />
       <Stack.Screen name="TopProductsScreen" component={TopProductsScreen} options={{ headerShown: false }} />

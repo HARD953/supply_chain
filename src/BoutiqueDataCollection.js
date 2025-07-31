@@ -18,16 +18,18 @@ import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from './AuthContext';
 
-const BoutiqueDataCollection = ({ navigation }) => {  
+const BoutiqueDataCollection = ({ navigation }) => {
+  const { accessToken, logout } = useAuth(); // Récupérer accessToken et logout depuis AuthContext
   const [loading, setLoading] = useState(false);
   const [locationError, setLocationError] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     nom: '',
     type: '',
     adresse: '',
-    categories:'',
+    categories: '',
     latitude: '',
     longitude: '',
     taille: '',
@@ -39,42 +41,17 @@ const BoutiqueDataCollection = ({ navigation }) => {
       nom: '',
       genre: '',
       telephone: '',
-      email: ''
-    }
+      email: '',
+    },
   });
 
-  const typeCommerces = [
-    'Boutique',
-    'Supérette'
-  ];
-
-  const Categories = [
-    'Grossiste',
-    'Semi-grossiste',
-    'Détaillant',
-    'Mixte'
-  ];
-
-  const typeTaille = [
-    'Petite',
-    'Moyenne',
-    'Grande',
-  ];
-
-  const typeFrequence = [
-    'Journalière',
-    'Hebdomadaire',
-    'Mensuelle',
-    'Annuelle',
-  ];
-
-  const genres = [
-    'Homme',
-    'Femme'
-  ];
+  const typeCommerces = ['Boutique', 'Supérette'];
+  const Categories = ['Grossiste', 'Semi-grossiste', 'Détaillant', 'Mixte'];
+  const typeTaille = ['Petite', 'Moyenne', 'Grande'];
+  const typeFrequence = ['Journalière', 'Hebdomadaire', 'Mensuelle', 'Annuelle'];
+  const genres = ['Homme', 'Femme'];
 
   useEffect(() => {
-    //requestLocationPermission();
     requestMediaLibraryPermission();
   }, []);
 
@@ -91,10 +68,10 @@ const BoutiqueDataCollection = ({ navigation }) => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         const location = await Location.getCurrentPositionAsync({});
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           latitude: location.coords.latitude.toString(),
-          longitude: location.coords.longitude.toString()
+          longitude: location.coords.longitude.toString(),
         }));
       } else {
         setLocationError('Permission de localisation refusée');
@@ -116,47 +93,51 @@ const BoutiqueDataCollection = ({ navigation }) => {
       });
 
       if (!result.canceled) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          image: result.assets[0].uri
+          image: result.assets[0].uri,
         }));
       }
     } catch (error) {
-      Alert.alert('Erreur', 'Impossible de charger l\'image');
+      Alert.alert('Erreur', "Impossible de charger l'image");
     }
   };
 
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      
-      // Validation des champs requis
+
+      // Vérification des champs obligatoires
       if (!formData.nom || !formData.type || !formData.adresse || !formData.proprietaire.nom) {
         Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires');
         return;
       }
-  
-      // Création du FormData
+
+      // Vérification de la présence du token
+      if (!accessToken) {
+        Alert.alert('Erreur', 'Vous devez être connecté pour enregistrer une boutique');
+        navigation.navigate('LoginScreen');
+        return;
+      }
+
       const formDataToSend = new FormData();
-  
-      // Ajout de l'image si elle existe
+
       if (formData.image) {
         const filename = formData.image.split('/').pop();
         const match = /\.(\w+)$/.exec(filename);
         const type = match ? `image/${match[1]}` : 'image/jpeg';
-  
+
         formDataToSend.append('image', {
           uri: formData.image,
           name: filename || 'image.jpg',
-          type
+          type,
         });
       }
-  
-      // Conversion des données en format string pour l'API
+
       formDataToSend.append('name', formData.nom);
       formDataToSend.append('typecommerce', formData.type.toUpperCase());
       formDataToSend.append('type', formData.estBrander ? 'BRANDED' : 'NON_BRANDED');
-      formDataToSend.append('categorie',formData.categories);
+      formDataToSend.append('categorie', formData.categories);
       formDataToSend.append('brand', formData.marque || '');
       formDataToSend.append('address', formData.adresse);
       formDataToSend.append('taille', formData.taille);
@@ -164,38 +145,57 @@ const BoutiqueDataCollection = ({ navigation }) => {
       formDataToSend.append('latitude', formData.latitude || '0');
       formDataToSend.append('longitude', formData.longitude || '0');
       formDataToSend.append('owner_name', formData.proprietaire.nom);
-      formDataToSend.append('owner_gender', 
-        formData.proprietaire.genre === 'Homme' ? 'Male' : 
-        formData.proprietaire.genre === 'Femme' ? 'Female' : 'Other'
+      formDataToSend.append(
+        'owner_gender',
+        formData.proprietaire.genre === 'Homme' ? 'Male' : formData.proprietaire.genre === 'Femme' ? 'Female' : 'Other'
       );
       formDataToSend.append('owner_phone', formData.proprietaire.telephone);
       formDataToSend.append('owner_email', formData.proprietaire.email);
-  
-      console.log('FormData being sent:', formDataToSend); // Pour le débogage
-  
+
+      console.log('FormData being sent:', formDataToSend);
+
       const response = await fetch('https://supply-3.onrender.com/api/shops/', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${accessToken}`, // Token déjà présent
         },
-        body: formDataToSend
+        body: formDataToSend,
       });
-  
+
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('Server response:', errorData); // Pour le débogage
+        console.error('Server response:', errorData);
+        if (response.status === 401) {
+          Alert.alert('Erreur', 'Session expirée. Veuillez vous reconnecter.');
+          navigation.navigate('LoginScreen');
+          return;
+        }
         throw new Error('Erreur lors de l\'enregistrement');
       }
-  
+
       const result = await response.json();
-      console.log('Success response:', result); // Pour le débogage
+      console.log('Success response:', result);
       Alert.alert('Succès', 'La boutique a été enregistrée avec succès');
-      navigation.navigate("HomeDashboard");
-  
+      navigation.navigate('HomeDashboard');
     } catch (error) {
-      console.error('Error details:', error); // Pour le débogage
+      console.error('Error details:', error);
       Alert.alert('Erreur', error.message || 'Une erreur est survenue lors de l\'enregistrement');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      setLoading(true);
+      await logout(); // Appeler la fonction logout du contexte
+      Alert.alert('Déconnexion réussie', 'Vous avez été déconnecté avec succès.');
+      navigation.navigate('LoginScreen'); // Rediriger vers LoginScreen
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      Alert.alert('Erreur', 'Une erreur est survenue lors de la déconnexion.');
     } finally {
       setLoading(false);
     }
@@ -204,10 +204,7 @@ const BoutiqueDataCollection = ({ navigation }) => {
   const ImageSelector = ({ image }) => (
     <View style={styles.imageContainer}>
       <Text style={styles.inputLabel}>Image</Text>
-      <TouchableOpacity 
-        style={styles.imageSelector} 
-        onPress={pickImage}
-      >
+      <TouchableOpacity style={styles.imageSelector} onPress={pickImage}>
         {image ? (
           <Image source={{ uri: image }} style={styles.selectedImage} />
         ) : (
@@ -221,58 +218,51 @@ const BoutiqueDataCollection = ({ navigation }) => {
   );
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
-      <LinearGradient
-        colors={['#1E3A8A', '#3B82F6']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
+      <LinearGradient colors={['#1E3A8A', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <MaterialIcons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Collecte des données</Text>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} disabled={loading}>
+            <MaterialIcons name="logout" size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
       </LinearGradient>
-  
-      <ScrollView 
+
+      <ScrollView
         style={styles.formContainer}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="always"
       >
         <View style={styles.formSection}>
-          <LinearGradient
-            colors={['#ffffff', '#f8f8f8']}
-            style={styles.gradientCard}
-          >
+          <LinearGradient colors={['#ffffff', '#f8f8f8']} style={styles.gradientCard}>
             <Text style={styles.sectionTitle}>Informations sur le site</Text>
-            
+
             <ImageSelector image={formData.image} />
-  
+
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Raison sociale</Text>
               <TextInput
                 style={styles.input}
                 value={formData.nom}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, nom: text }))}
+                onChangeText={(text) => setFormData((prev) => ({ ...prev, nom: text }))}
                 placeholder="Entrez le nom"
                 placeholderTextColor="#999"
               />
             </View>
-  
+
             <View style={styles.pickerContainer}>
               <Text style={styles.inputLabel}>Type de commerce</Text>
               <Picker
                 selectedValue={formData.type}
                 style={styles.picker}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}
               >
                 <Picker.Item label="Sélectionnez le type" value="" />
                 {typeCommerces.map((type) => (
@@ -284,13 +274,13 @@ const BoutiqueDataCollection = ({ navigation }) => {
             <View style={styles.pickerContainer}>
               <Text style={styles.inputLabel}>Catégories</Text>
               <Picker
-                selectedValue={formData.type}
+                selectedValue={formData.categories}
                 style={styles.picker}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, categories: value }))}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, categories: value }))}
               >
                 <Picker.Item label="Sélectionnez le type" value="" />
-                {Categories.map((categories) => (
-                  <Picker.Item key={categories} label={categories} value={categories} />
+                {Categories.map((category) => (
+                  <Picker.Item key={category} label={category} value={category} />
                 ))}
               </Picker>
             </View>
@@ -300,7 +290,7 @@ const BoutiqueDataCollection = ({ navigation }) => {
               <Picker
                 selectedValue={formData.taille}
                 style={styles.picker}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, taille: value }))}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, taille: value }))}
               >
                 <Picker.Item label="Sélectionnez le type" value="" />
                 {typeTaille.map((taille) => (
@@ -310,11 +300,11 @@ const BoutiqueDataCollection = ({ navigation }) => {
             </View>
 
             <View style={styles.pickerContainer}>
-              <Text style={styles.inputLabel}>Frequence d'approvisionnement</Text>
+              <Text style={styles.inputLabel}>Fréquence d'approvisionnement</Text>
               <Picker
                 selectedValue={formData.frequence}
                 style={styles.picker}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, frequence: value }))}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, frequence: value }))}
               >
                 <Picker.Item label="Sélectionnez le type" value="" />
                 {typeFrequence.map((frequence) => (
@@ -322,46 +312,47 @@ const BoutiqueDataCollection = ({ navigation }) => {
                 ))}
               </Picker>
             </View>
-  
-  
+
             <View style={styles.switchContainer}>
               <Text style={styles.inputLabel}>Boutique brandée</Text>
               <Switch
                 value={formData.estBrander}
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  estBrander: value,
-                  marque: value ? prev.marque : ''
-                }))}
-                trackColor={{ false: "#d1d1d1", true: "#90caf9" }}
-                thumbColor={formData.estBrander ? "#1E3A8A" : "#f4f3f4"}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    estBrander: value,
+                    marque: value ? prev.marque : '',
+                  }))
+                }
+                trackColor={{ false: '#d1d1d1', true: '#90caf9' }}
+                thumbColor={formData.estBrander ? '#1E3A8A' : '#f4f3f4'}
               />
             </View>
-  
+
             {formData.estBrander && (
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Marque</Text>
                 <TextInput
                   style={styles.input}
                   value={formData.marque}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, marque: text }))}
+                  onChangeText={(text) => setFormData((prev) => ({ ...prev, marque: text }))}
                   placeholder="Entrez la marque"
                   placeholderTextColor="#999"
                 />
               </View>
             )}
-  
+
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Adresse</Text>
               <TextInput
                 style={styles.input}
                 value={formData.adresse}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, adresse: text }))}
+                onChangeText={(text) => setFormData((prev) => ({ ...prev, adresse: text }))}
                 placeholder="Entrez l'adresse complète"
                 placeholderTextColor="#999"
               />
             </View>
-  
+
             <View style={styles.locationContainer}>
               <Text style={styles.inputLabel}>Coordonnées GPS</Text>
               <View style={styles.locationFields}>
@@ -383,42 +374,43 @@ const BoutiqueDataCollection = ({ navigation }) => {
                     placeholderTextColor="#999"
                   />
                 </View>
-                <TouchableOpacity 
-                  style={styles.locationButton}
-                  onPress={requestLocationPermission}
-                >
+                <TouchableOpacity style={styles.locationButton} onPress={requestLocationPermission}>
                   <MaterialIcons name="my-location" size={24} color="#fff" />
                 </TouchableOpacity>
               </View>
               {loading && <ActivityIndicator style={styles.loader} color="#1E3A8A" />}
               {locationError && <Text style={styles.errorText}>{locationError}</Text>}
             </View>
-  
+
             <Text style={styles.subSectionTitle}>Informations du propriétaire</Text>
-            
+
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Nom du propriétaire</Text>
               <TextInput
                 style={styles.input}
                 value={formData.proprietaire.nom}
-                onChangeText={(text) => setFormData(prev => ({
-                  ...prev,
-                  proprietaire: { ...prev.proprietaire, nom: text }
-                }))}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    proprietaire: { ...prev.proprietaire, nom: text },
+                  }))
+                }
                 placeholder="Entrez le nom du propriétaire"
                 placeholderTextColor="#999"
               />
             </View>
-  
+
             <View style={styles.pickerContainer}>
               <Text style={styles.inputLabel}>Genre</Text>
               <Picker
                 selectedValue={formData.proprietaire.genre}
                 style={styles.picker}
-                onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  proprietaire: { ...prev.proprietaire, genre: value }
-                }))}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    proprietaire: { ...prev.proprietaire, genre: value },
+                  }))
+                }
               >
                 <Picker.Item label="Sélectionnez le genre" value="" />
                 {genres.map((genre) => (
@@ -426,42 +418,42 @@ const BoutiqueDataCollection = ({ navigation }) => {
                 ))}
               </Picker>
             </View>
-  
+
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Téléphone</Text>
               <TextInput
                 style={styles.input}
                 value={formData.proprietaire.telephone}
-                onChangeText={(text) => setFormData(prev => ({
-                  ...prev,
-                  proprietaire: { ...prev.proprietaire, telephone: text }
-                }))}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    proprietaire: { ...prev.proprietaire, telephone: text },
+                  }))
+                }
                 placeholder="Numéro de téléphone"
                 keyboardType="phone-pad"
                 placeholderTextColor="#999"
               />
             </View>
-  
+
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Email</Text>
               <TextInput
                 style={styles.input}
                 value={formData.proprietaire.email}
-                onChangeText={(text) => setFormData(prev => ({
-                  ...prev,
-                  proprietaire: { ...prev.proprietaire, email: text }
-                }))}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    proprietaire: { ...prev.proprietaire, email: text },
+                  }))
+                }
                 placeholder="Adresse email"
                 keyboardType="email-address"
                 placeholderTextColor="#999"
               />
             </View>
-  
-            <TouchableOpacity 
-              style={styles.submitButton}
-              onPress={handleSubmit}
-              disabled={loading}
-            >
+
+            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
@@ -485,6 +477,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 50 : 16,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   backButton: {
     padding: 8,
@@ -495,6 +488,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     flex: 1,
+    textAlign: 'center',
+  },
+  logoutButton: {
+    padding: 8,
+    marginLeft: 16,
   },
   formContainer: {
     padding: 16,

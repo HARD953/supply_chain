@@ -16,17 +16,19 @@ import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from './AuthContext'; // Importer useAuth pour récupérer le token
 
 const ProduitDataCollection = ({ navigation }) => {
+  const { accessToken } = useAuth(); // Récupérer accessToken depuis AuthContext
   const [formData, setFormData] = useState({
     name: '',
     category: '',
     price: '',
-    frequence:'',
+    frequence: '',
     image: null,
     stock: '',
     reorder_frequency: '',
-    supplier: ''
+    supplier: '',
   });
 
   const typeFrequence = [
@@ -47,7 +49,7 @@ const ProduitDataCollection = ({ navigation }) => {
     'Cosmétique',
     'Mobilier',
     'Construction',
-    'Autre'
+    'Autre',
   ];
 
   useEffect(() => {
@@ -62,7 +64,6 @@ const ProduitDataCollection = ({ navigation }) => {
     // Récupération de la liste des fournisseurs
     const fetchSuppliers = async () => {
       try {
-        // Utilisons le même endpoint que celui utilisé pour l'enregistrement du produit
         const response = await fetch('https://supply-3.onrender.com/api/suppliername/');
         if (!response.ok) {
           throw new Error('Erreur lors de la récupération des fournisseurs');
@@ -70,11 +71,10 @@ const ProduitDataCollection = ({ navigation }) => {
         const data = await response.json();
         setSuppliers(data);
         
-        // Si nous avons des fournisseurs, utilisons l'ID du premier comme valeur par défaut
         if (data.length > 0) {
           setFormData(prev => ({
             ...prev,
-            supplier: data[0].id
+            supplier: data[0].id,
           }));
         }
       } catch (error) {
@@ -101,7 +101,7 @@ const ProduitDataCollection = ({ navigation }) => {
       if (!result.canceled) {
         setFormData(prev => ({
           ...prev,
-          image: result.assets[0].uri
+          image: result.assets[0].uri,
         }));
       }
     } catch (error) {
@@ -118,7 +118,6 @@ const ProduitDataCollection = ({ navigation }) => {
     setIsLoading(true);
 
     try {
-      // Création du FormData pour l'envoi de l'image
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
       formDataToSend.append('category', formData.category);
@@ -127,7 +126,6 @@ const ProduitDataCollection = ({ navigation }) => {
       formDataToSend.append('frequence_appr', formData.frequence);
       formDataToSend.append('reorder_frequency', formData.reorder_frequency);
       
-      // Assurez-vous que le supplier est envoyé comme une chaîne
       console.log('Supplier ID being sent:', formData.supplier);
       console.log('Type of supplier ID:', typeof formData.supplier);
       formDataToSend.append('supplier', formData.supplier.toString());
@@ -141,7 +139,7 @@ const ProduitDataCollection = ({ navigation }) => {
         formDataToSend.append('image', {
           uri: imageUri,
           name: filename,
-          type
+          type,
         });
       }
 
@@ -150,6 +148,7 @@ const ProduitDataCollection = ({ navigation }) => {
         body: formDataToSend,
         headers: {
           'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${accessToken}`, // Ajouter le token ici
         },
       });
 
@@ -157,7 +156,6 @@ const ProduitDataCollection = ({ navigation }) => {
         const errorData = await response.json().catch(() => null);
         console.error('Server response:', errorData);
         
-        // Afficher un message d'erreur plus spécifique si c'est un problème de fournisseur
         if (errorData && errorData.supplier) {
           throw new Error(`Erreur avec le fournisseur : ${errorData.supplier.join(', ')}`);
         }
@@ -194,9 +192,7 @@ const ProduitDataCollection = ({ navigation }) => {
     </View>
   );
 
-  // Fonction corrigée pour gérer le changement de fournisseur
   const handleSupplierChange = (supplierId) => {
-    // Assurer que supplierId est un nombre
     const id = typeof supplierId === 'string' ? parseInt(supplierId, 10) : supplierId;
     
     console.log('Selected supplier ID:', id);
@@ -204,7 +200,7 @@ const ProduitDataCollection = ({ navigation }) => {
     
     setFormData(prev => ({
       ...prev,
-      supplier: id
+      supplier: id,
     }));
   };
 
@@ -269,7 +265,6 @@ const ProduitDataCollection = ({ navigation }) => {
               </Picker>
             </View>
 
-            {/* Sélecteur de fournisseur */}
             <View style={styles.pickerContainer}>
               <Text style={styles.inputLabel}>Fournisseur</Text>
               {loadingSuppliers ? (
@@ -334,7 +329,7 @@ const ProduitDataCollection = ({ navigation }) => {
             </View>
 
             <View style={styles.pickerContainer}>
-              <Text style={styles.inputLabel}>Frequence d'approvisionnement</Text>
+              <Text style={styles.inputLabel}>Fréquence d'approvisionnement</Text>
               <Picker
                 selectedValue={formData.frequence}
                 style={styles.picker}
@@ -493,7 +488,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginLeft: 10,
     color: '#666',
-  }
+  },
 });
 
 export default ProduitDataCollection;
